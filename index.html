@@ -356,6 +356,7 @@
     .set-age{ flex-shrink:0; min-width:auto; overflow:visible; text-overflow:clip; white-space:normal; }
     .set-header .date-wrap{ grid-area:release; }
     .set-header-chev{ display:none; }
+    header{ position:static; }
   }
 </style>
 </head>
@@ -434,6 +435,14 @@
     <div class="modal-actions">
       <button type="button" id="onboardingDismiss" class="primary">Got it</button>
     </div>
+  </div>
+</div>
+
+<div class="onboarding-banner hidden" id="saveErrorBanner">
+  <div class="onboarding-box" style="border-color:var(--red); box-shadow:0 0 0 1px rgba(226,85,90,0.25);">
+    <button class="modal-close" id="saveErrorClose" aria-label="Close this warning">&times;</button>
+    <div class="modal-title" style="color:var(--red);">⚠ Changes aren't being saved right now</div>
+    <div class="modal-desc">Your browser just blocked saving to local storage, so what you're doing right now won't be kept after you close or reload this page. This can happen in private/incognito mode, with site data disabled, or when storage is full. Try <b>Backup (JSON)</b> now to be safe, then check your browser's site-data settings for this page.</div>
   </div>
 </div>
 
@@ -1013,10 +1022,17 @@ try{ customSets = JSON.parse(localStorage.getItem(CUSTOM_SETS_KEY) || '[]'); }ca
 let currencySymbol = '€';
 try{ currencySymbol = localStorage.getItem(CURRENCY_KEY) || '€'; }catch(e){ currencySymbol = '€'; }
 
-function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
-function saveReleaseStore(){ try{ localStorage.setItem(RELEASE_KEY, JSON.stringify(releaseStore)); }catch(e){} }
-function saveCurrency(){ try{ localStorage.setItem(CURRENCY_KEY, currencySymbol); }catch(e){} }
-function saveCustomSets(){ try{ localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets)); }catch(e){} }
+let saveErrorShown = false;
+function reportSaveError(){
+  if(saveErrorShown) return;
+  saveErrorShown = true;
+  const b = document.getElementById('saveErrorBanner');
+  if(b) b.classList.remove('hidden');
+}
+function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){ reportSaveError(); } }
+function saveReleaseStore(){ try{ localStorage.setItem(RELEASE_KEY, JSON.stringify(releaseStore)); }catch(e){ reportSaveError(); } }
+function saveCurrency(){ try{ localStorage.setItem(CURRENCY_KEY, currencySymbol); }catch(e){ reportSaveError(); } }
+function saveCustomSets(){ try{ localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets)); }catch(e){ reportSaveError(); } }
 
 // One-time migration: old ids/keys were based on array position ('p_<index>_<item>',
 // releaseStore['<index>']). We now key everything by the set's stable code instead,
@@ -1489,6 +1505,9 @@ function dismissOnboardingForGood(){
 document.getElementById('helpBtn').addEventListener('click', openOnboarding);
 document.getElementById('onboardingClose').addEventListener('click', closeOnboarding);
 document.getElementById('onboardingDismiss').addEventListener('click', dismissOnboardingForGood);
+document.getElementById('saveErrorClose').addEventListener('click', ()=>{
+  document.getElementById('saveErrorBanner').classList.add('hidden');
+});
 let onboardingAlreadySeen = false;
 try{ onboardingAlreadySeen = !!localStorage.getItem(ONBOARDING_KEY); }catch(e){ onboardingAlreadySeen = false; }
 if(!onboardingAlreadySeen) openOnboarding();
@@ -1740,8 +1759,8 @@ function render(){
         row.dataset.market = marketInp.value || '';
         row.classList.toggle('zero-market', !cb.checked && isZeroMarket(marketInp.value));
         applyFilters();
-        maybeResort();
       });
+      marketInp.addEventListener('blur', maybeResort);
 
       cb.addEventListener('change', ()=>{
         const owned = cb.checked;
@@ -1759,8 +1778,8 @@ function render(){
       priceInp.addEventListener('input', ()=>{
         setEntry(id, { price: priceInp.value });
         updateGroupSpent(group);
-        maybeResort();
       });
+      priceInp.addEventListener('blur', maybeResort);
       dateInp.addEventListener('input', ()=>{ setEntry(id, { date: dateInp.value }); });
 
       itemWrap.appendChild(row);
@@ -1786,9 +1805,9 @@ function render(){
       saveReleaseStore();
       group.dataset.release = releaseInp.value || '';
       ageEl.textContent = ageText(releaseInp.value);
-      maybeResort();
       refreshSequenceBadges();
     });
+    releaseInp.addEventListener('blur', maybeResort);
   });
   updateStats();
   sortGroups(document.getElementById('sortSel').value);
