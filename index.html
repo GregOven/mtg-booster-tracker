@@ -347,6 +347,8 @@
   .empty-state{ max-width:980px; margin:36px auto; padding:28px 16px; text-align:center; }
   .empty-title{ font-family:var(--serif); font-size:19px; font-weight:700; margin-bottom:6px; }
   .empty-desc{ color:var(--muted); font-size:13.5px; margin-bottom:16px; }
+  .release-date.order-conflict{ border-color:#d9a441; box-shadow:0 0 0 1px rgba(217,164,65,0.45); }
+  .order-warn{ color:#d9a441; font-size:11.5px; font-weight:600; margin-left:8px; white-space:nowrap; cursor:help; }
   .invalid-date{ border-color:var(--red) !important; color:var(--red) !important; box-shadow:0 0 0 1px rgba(226,85,90,0.45); }
   .toast{
     position:fixed; left:50%; bottom:24px; z-index:300; max-width:calc(100vw - 32px);
@@ -429,7 +431,7 @@
       <option value="has-market">Has market price</option>
     </select>
     <select id="sortSel" aria-label="Sort order">
-      <option value="default">Default order</option>
+      <option value="default">Default order (newest first)</option>
       <option value="group">Group by series</option>
       <option value="price-desc">Price paid: priciest first</option>
       <option value="price-asc">Price paid: cheapest first</option>
@@ -1297,12 +1299,77 @@ function computeItemSequenceNumbers(){
   });
   entries.sort((a,b)=>{
     if(a.rel !== b.rel) return a.rel < b.rel ? -1 : 1;
-    if(a.si !== b.si) return a.si - b.si;
+    // same release date: the set listed LOWER in the built-in (newest-first) order is older -> lower number
+    if(a.si !== b.si) return b.si - a.si;
     return a.ii - b.ii;
   });
   const seq = {};
   entries.forEach((e, idx)=>{ seq[e.id] = idx + 1; });
   return seq;
+}
+
+// ---- Release-date consistency ----
+// The list is in a fixed built-in order (newest first), while the #numbers come from the dates YOU enter.
+// If one date contradicts the sets around it (e.g. a typo in the year), the two disagree. We find the
+// largest group of dates that agree with the list order and flag the odd ones out (31-day slack, because
+// sets released the same month are not always listed in exact day order).
+const ORDER_SLACK_DAYS = 31;
+function dayNumber(iso){ const [y,m,d] = iso.split('-').map(Number); return Math.round(Date.UTC(y, m-1, d) / 86400000); }
+function computeOrderConflicts(){
+  const dated = [];
+  DATA.forEach(([setName], si)=>{
+    const code = codeOf(setName);
+    if(customSets.some(cs=>cs.code===code)) return;           // your own sets have no built-in position
+    const rel = releaseStore[code];
+    if(!rel || !isPlausibleDate(rel, releaseDateMax())) return;
+    dated.push({ code, title: titleOf(setName), rel, day: dayNumber(rel) });
+  });
+  const n = dated.length;
+  const best = new Array(n).fill(1), prev = new Array(n).fill(-1);
+  for(let i=0;i<n;i++){
+    for(let j=0;j<i;j++){
+      // going down the list the dates should not go UP (beyond the slack)
+      if(dated[i].day <= dated[j].day + ORDER_SLACK_DAYS && best[j] + 1 > best[i]){ best[i] = best[j] + 1; prev[i] = j; }
+    }
+  }
+  let end = 0; for(let i=1;i<n;i++) if(best[i] > best[end]) end = i;
+  const inChain = new Set();
+  for(let k=end; k>=0 && n; k=prev[k]) inChain.add(k);
+  const chain = dated.filter((_, i)=> inChain.has(i));
+  const conflicts = {};
+  dated.forEach((d, i)=>{
+    if(inChain.has(i)) return;
+    // nearest agreeing sets above (newer) and below (older) this one in the list
+    let above = null, below = null;
+    for(let k=i-1;k>=0;k--) if(inChain.has(k)){ above = dated[k]; break; }
+    for(let k=i+1;k<n;k++) if(inChain.has(k)){ below = dated[k]; break; }
+    conflicts[d.code] = { above, below };
+  });
+  return conflicts;
+}
+function formatMonthYear(iso){
+  try{ return new Date(iso + 'T00:00:00').toLocaleDateString(resolvedLocale(), { month:'short', year:'numeric' }); }
+  catch(e){ return iso.slice(0,7); }
+}
+function refreshOrderFlags(){
+  const conflicts = computeOrderConflicts();
+  document.querySelectorAll('.set-group').forEach(g=>{
+    const inp = g.querySelector('.release-date');
+    const warn = g.querySelector('[data-role=order-warn]');
+    if(!inp || !warn) return;
+    const c = conflicts[inp.dataset.code];
+    inp.classList.toggle('order-conflict', !!c);
+    warn.classList.toggle('hidden', !c);
+    if(c){
+      const range = (c.below && c.above) ? `the sets around it were released between ${formatMonthYear(c.below.rel)} and ${formatMonthYear(c.above.rel)}`
+        : c.above ? `the set just above it in the list was released ${formatMonthYear(c.above.rel)}`
+        : c.below ? `the set just below it in the list was released ${formatMonthYear(c.below.rel)}` : '';
+      const tip = `This date doesn't fit the order of the list${range ? ': ' + range : ''}. Please check the date (most often it is the year).`;
+      warn.title = tip; inp.title = tip;
+    } else if(!inp.classList.contains('invalid-date')){
+      warn.removeAttribute('title'); inp.removeAttribute('title');
+    }
+  });
 }
 
 function refreshSequenceBadges(){
@@ -1909,6 +1976,7 @@ function render(){
         ${milestone ? `<span class="milestone-info-btn" data-role="milestone-btn" role="button" tabindex="0" aria-label="Why ${escapeHtml(titleText)} is special" title="Why this set is special">i</span>` : ''}
         ${isCustom ? `<span class="set-actions"><span class="edit-set-btn" data-role="edit-set-btn" role="button" tabindex="0" aria-label="Edit ${escapeHtml(titleText)}" title="Edit this custom set">✏</span><span class="delete-set-btn" data-role="delete-set-btn" role="button" tabindex="0" aria-label="Delete ${escapeHtml(titleText)}" title="Delete this custom set">🗑</span></span>` : ''}
         <span class="set-age" data-role="age"></span>
+        <span class="order-warn hidden" data-role="order-warn">⚠ date out of order</span>
       </div>
       <div class="date-wrap" data-role="release-wrap">
         <input type="date" class="release-date" data-code="${escapeHtml(codeText)}" value="${releaseStore[codeText]||''}" aria-label="Release date for ${escapeHtml(titleText)}">
@@ -2104,6 +2172,7 @@ function render(){
       group.dataset.release = releaseInp.value || '';
       ageEl.textContent = ageText(releaseInp.value);
       refreshSequenceBadges();
+      refreshOrderFlags();
     });
     releaseInp.addEventListener('blur', ()=>{
       if(!releaseOk()){
@@ -2120,6 +2189,7 @@ function render(){
   updateStats();
   sortGroups(document.getElementById('sortSel').value);
   refreshSequenceBadges();
+  refreshOrderFlags();
   applyFilters(); // keep an active search / filter in effect after a re-render
 }
 
@@ -2204,17 +2274,21 @@ function sortGroups(mode){
   } else if(mode === 'release-desc'){
     groups.sort((a,b)=>{
       const ra = a.dataset.release, rb = b.dataset.release;
-      if(!ra && !rb) return 0;
+      const oa = parseInt(a.dataset.origIndex), ob = parseInt(b.dataset.origIndex);
+      if(!ra && !rb) return oa - ob;
       if(!ra) return 1;
       if(!rb) return -1;
+      if(ra === rb) return oa - ob;   // same date: keep the built-in newest-first order
       return rb.localeCompare(ra);
     });
   } else if(mode === 'release-asc'){
     groups.sort((a,b)=>{
       const ra = a.dataset.release, rb = b.dataset.release;
-      if(!ra && !rb) return 0;
+      const oa = parseInt(a.dataset.origIndex), ob = parseInt(b.dataset.origIndex);
+      if(!ra && !rb) return oa - ob;
       if(!ra) return 1;
       if(!rb) return -1;
+      if(ra === rb) return ob - oa;   // same date: keep the built-in newest-first order
       return ra.localeCompare(rb);
     });
   } else if(mode === 'group'){
