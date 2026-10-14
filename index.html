@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MTG Booster Pack Tracker</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1d212b; --border:#2a2f3a;
+    --text:#e8eaf0; --muted:#8b93a7; --accent:#c9a24b; --accent2:#7aa2f7;
+    --green:#4caf6d; --green-bg:rgba(76,175,109,0.14); --red:#e2555a;
+    --pink:#ec6fa6; --pink-bg:rgba(236,111,166,0.14);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L",Georgia,serif;
+    --col-check:42px; --col-market:140px; --col-price:150px; --col-date:170px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,#0f1115,#13151b 400px,#0f1115);
+    color:var(--text); padding-bottom:60px;
+  }
+  header{
+    position:sticky; top:0; z-index:20; background:rgba(15,17,21,0.97);
+    backdrop-filter:blur(6px); border-bottom:1px solid var(--border);
+    padding:14px 18px;
+  }
+  h1{
+    margin:0 0 4px; font-family:var(--serif); font-size:21px; font-weight:700; letter-spacing:.2px;
+    display:flex; align-items:center; gap:8px;
+  }
+  h1 .logo-mark{ flex-shrink:0; }
+  .pro-badge{
+    display:inline-block; background:var(--accent); color:#1a1a1a; font-size:10.5px; font-weight:800;
+    letter-spacing:.5px; border-radius:5px; padding:2px 7px; vertical-align:middle; margin-left:4px;
+  }
+  .sub{ color:var(--muted); font-size:13px; margin-bottom:10px;}
+  .help-link{
+    background:none; border:none; color:var(--accent2); font-size:12.5px; padding:0; margin-left:4px;
+    cursor:pointer; text-decoration:underline; font-family:inherit;
+  }
+  .help-link:hover{ filter:none; color:var(--text); }
+  .onboarding-banner{
+    max-width:980px; margin:14px auto 0; padding:0 16px;
+  }
+  .onboarding-banner.hidden{ display:none; }
+  .onboarding-box{
+    position:relative; background:var(--panel); border:1px solid var(--accent); border-radius:12px;
+    padding:16px 20px; box-shadow:0 0 0 1px rgba(201,162,75,0.2);
+  }
+  .onboarding-list{ margin:0 0 14px; padding-left:20px; font-size:13px; color:var(--text); line-height:1.7; }
+  .onboarding-list li{ margin-bottom:4px; }
+  .onboarding-box .modal-actions{ margin-top:0; padding-top:0; border-top:none; justify-content:flex-end; }
+  .controls{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  input[type=text]{
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:8px 12px; border-radius:8px; font-size:14px; flex:1; min-width:180px;
+  }
+  select, button{
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:8px 12px; border-radius:8px; font-size:13px; cursor:pointer;
+  }
+  input[type=text], select#filter, select#sortSel{ height:40px; }
+  button.primary{ background:var(--accent); color:#1a1a1a; border:none; font-weight:600;}
+  button.secondary{ background:rgba(201,162,75,0.14); color:var(--accent); border:1px solid rgba(201,162,75,0.5); font-weight:600;}
+  button:hover{ filter:brightness(1.15);}
+  .stats{ display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .stat{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:8px 14px; font-size:13px; color:var(--muted);
+  }
+  .stat b{ color:var(--text); font-size:15px; display:block;}
+  .stat b.stat-gain{ color:var(--green); }
+  .stat b.stat-loss{ color:var(--red); }
+  .progress-wrap{ margin-top:12px; }
+  .progress-label{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-bottom:4px;}
+  .progress-bar-bg{
+    width:100%; height:14px; background:var(--panel2); border:1px solid var(--border);
+    border-radius:8px; overflow:hidden;
+  }
+  .progress-bar-fill{
+    height:100%; border-radius:8px 0 0 8px;
+    transition:width .3s ease, background-color .3s ease;
+  }
+  main{ max-width:980px; margin:18px auto; padding:0 16px; }
+  .set-group{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    margin-bottom:14px; overflow:hidden; transition:background .2s, border-color .2s, box-shadow .3s ease;
+    scroll-margin-top:20px;
+  }
+  .set-group.complete{
+    background:var(--green-bg); border-color:rgba(76,175,109,0.5);
+  }
+  .set-group.milestone{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px rgba(201,162,75,0.35);
+  }
+  .set-group.milestone.complete{
+    border-color:var(--accent);
+  }
+  .milestone-info-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:16px; height:16px; border-radius:50%;
+    background:rgba(201,162,75,0.18); color:var(--accent);
+    font-size:11px; font-weight:700; font-style:normal;
+    margin-left:7px; cursor:pointer; vertical-align:middle;
+    border:1px solid rgba(201,162,75,0.5);
+    flex-shrink:0;
+  }
+  .milestone-info-btn:hover{ background:rgba(201,162,75,0.32); }
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.hidden{ display:none; }
+  .modal-box{
+    background:var(--panel); border:1px solid var(--accent); border-radius:12px;
+    max-width:520px; width:100%; padding:20px 22px; position:relative;
+    box-shadow:0 0 0 1px rgba(201,162,75,0.25), 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .modal-year{ color:var(--accent); font-weight:700; font-size:12px; letter-spacing:.3px; text-transform:uppercase; margin-bottom:6px; }
+  .modal-title{ font-family:var(--serif); font-size:18px; font-weight:700; margin-bottom:10px; line-height:1.35; }
+  .modal-desc{ font-size:13.5px; color:var(--muted); line-height:1.55; }
+  .modal-close{
+    position:absolute; top:12px; right:14px; background:none; border:none;
+    color:var(--muted); font-size:20px; cursor:pointer; padding:2px 6px; line-height:1;
+  }
+  .modal-close:hover{ color:var(--text); }
+  .year-modal-summary{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .year-stat-chip{ background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:6px 12px; font-size:11.5px; color:var(--muted); }
+  .year-stat-chip b{ color:var(--text); font-size:14px; font-weight:700; display:block; }
+  .year-legend{ display:flex; gap:16px; font-size:11.5px; color:var(--muted); margin-bottom:10px; }
+  .year-legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .year-legend i{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .year-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:13px; }
+  .year-label{ width:44px; flex-shrink:0; color:var(--muted); font-weight:600; }
+  .year-bar-track{ position:relative; flex:1; background:var(--panel2); border:1px solid var(--border); border-radius:5px; overflow:hidden; height:18px; }
+  .year-bar-total{ position:absolute; inset:0 auto 0 0; height:100%; background:var(--accent2); opacity:.35; border-radius:5px 0 0 5px; transition:width .25s ease; }
+  .year-bar-owned{ position:absolute; inset:0 auto 0 0; height:100%; background:var(--green); border-radius:5px 0 0 5px; transition:width .25s ease, background .25s ease; cursor:help; }
+  .year-bar-missing{ position:absolute; top:0; bottom:0; height:100%; cursor:help; }
+  .chart-tooltip{
+    position:fixed; z-index:200; pointer-events:none; display:none;
+    background:#11131a; border:1px solid var(--border); border-radius:8px;
+    padding:8px 11px; font-size:12px; line-height:1.55; color:var(--text);
+    white-space:pre-line; max-width:250px;
+    box-shadow:0 10px 28px rgba(0,0,0,0.5);
+  }
+  .year-row.complete .year-bar-owned{ background:var(--accent); }
+  .year-row.complete .year-count{ color:var(--accent); }
+  .year-row.complete .year-label{ color:var(--accent); font-weight:700; }
+  .year-count{ width:52px; text-align:right; color:var(--text); font-weight:700; flex-shrink:0; font-variant-numeric:tabular-nums; }
+  .year-empty-note{ color:var(--muted); font-size:12.5px; margin-top:10px; }
+  .missing-sets-wrap{ margin-top:18px; padding-top:14px; border-top:1px solid var(--border); }
+  .missing-sets-title{ font-size:12px; color:var(--muted); margin-bottom:9px; }
+  .missing-set-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--panel2); border:1px solid var(--border); border-radius:20px;
+    padding:5px 12px 5px 12px; font-size:12.5px; color:var(--text); cursor:pointer;
+    margin:0 6px 6px 0; transition:background .15s, border-color .15s;
+  }
+  .missing-set-pill:hover{ background:rgba(122,162,247,0.14); border-color:var(--accent2); }
+  .missing-set-pill .pill-code{ color:var(--accent2); font-weight:700; font-size:10.5px; }
+
+  /* ---- Add-set modal & form elements ---- */
+  .form-group{ margin-bottom:18px; }
+  .form-label{ display:block; font-size:12.5px; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .form-hint{ font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .form-input{
+    width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:9px 11px; border-radius:8px; font-size:13.5px; font-family:inherit;
+    box-sizing:border-box;
+  }
+  .form-input:focus{ outline:none; border-color:var(--accent2); }
+  .form-input-code{ max-width:160px; text-transform:uppercase; }
+  textarea.form-input{ resize:vertical; }
+  .form-error{ color:var(--red); font-size:12px; margin-top:6px; }
+  .form-checkbox-label{
+    display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--text);
+    cursor:pointer; font-weight:600; margin-bottom:10px;
+  }
+  .form-checkbox-label input[type=checkbox]{ margin-top:2px; width:16px; height:16px; accent-color:var(--accent2); cursor:pointer; }
+  .milestone-toggle-wrap #newSetMilestoneFields{ padding-left:24px; }
+  .pack-row{ display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+  .pack-row .form-input{ flex:1; }
+  .remove-pack-row{
+    flex-shrink:0; width:30px; height:30px; border-radius:8px;
+    background:var(--panel2); border:1px solid var(--border); color:var(--muted);
+    cursor:pointer; font-size:15px; line-height:1;
+  }
+  .remove-pack-row:hover{ background:rgba(226,85,90,0.15); border-color:var(--red); color:var(--red); }
+  .remove-pack-row:disabled{ opacity:.3; cursor:not-allowed; }
+  .ghost-btn{
+    background:transparent; border:1px dashed var(--border); color:var(--muted);
+    padding:7px 14px; border-radius:8px; font-size:12.5px; cursor:pointer; font-family:inherit;
+  }
+  .ghost-btn:hover{ border-color:var(--accent2); color:var(--accent2); }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:22px; padding-top:16px; border-top:1px solid var(--border); }
+  .modal-actions .ghost-btn{ border-style:solid; }
+  .custom-badge{
+    display:inline-block; background:rgba(122,162,247,0.14); color:var(--accent2);
+    border:1px solid rgba(122,162,247,0.4); border-radius:5px; padding:1px 7px;
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; margin-left:7px;
+    flex-shrink:0;
+  }
+  .delete-set-btn{
+    font-size:12.5px; margin-left:8px; cursor:pointer; opacity:.55; padding:2px 4px; border-radius:5px;
+    flex-shrink:0;
+  }
+  .delete-set-btn:hover{ opacity:1; background:rgba(226,85,90,0.15); }
+
+  @keyframes flashPulse{
+    0%{ box-shadow:0 0 0 3px rgba(122,162,247,0.9); }
+    100%{ box-shadow:0 0 0 0 rgba(122,162,247,0); }
+  }
+  .set-group.flash-highlight{ animation:flashPulse 1.4s ease; }
+  .set-header{
+    display:grid;
+    grid-template-columns: var(--col-check) 1fr var(--col-market) var(--col-price) var(--col-date);
+    gap:8px; align-items:center;
+    padding:12px 16px; cursor:pointer; user-select:none;
+    background:linear-gradient(90deg, rgba(122,162,247,0.08), transparent);
+  }
+  .set-group.complete .set-header{
+    background:linear-gradient(90deg, rgba(76,175,109,0.16), transparent);
+  }
+  .set-header:hover{ filter:brightness(1.1); }
+  .set-header:focus-visible{ outline:2px solid var(--accent2); outline-offset:-2px; }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent2); outline-offset:2px;
+  }
+  .set-header-check{ justify-self:center; }
+  .set-header-main{ grid-column: 2 / span 2; min-width:0; display:flex; align-items:baseline; flex-wrap:nowrap; overflow:hidden; }
+  .set-title{ font-family:var(--serif); font-weight:700; font-size:16px; white-space:nowrap; flex-shrink:0; }
+  .set-group.complete .set-title{ color:var(--green); }
+  .set-code{ color:var(--accent2); font-weight:600; font-size:12px; margin-left:6px; flex-shrink:0; }
+  .group-tag{
+    display:inline-block; background:rgba(139,147,167,0.12); color:var(--muted);
+    border:1px solid var(--border); border-radius:5px; padding:1px 7px;
+    font-size:10px; font-weight:600; margin-left:7px; flex-shrink:0;
+  }
+  .group-divider{
+    margin:24px 0 10px; padding:0 2px 8px;
+    font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--accent2); border-bottom:1px solid var(--border);
+  }
+  .group-divider:first-child{ margin-top:0; }
+  .set-count{ color:var(--muted); font-weight:600; font-size:11.5px; white-space:nowrap; background:var(--panel2); border:1px solid var(--border); border-radius:6px; padding:3px 8px; }
+  .set-group.complete .set-count{ color:var(--green); border-color:rgba(76,175,109,0.4); }
+  .set-age{
+    color:var(--muted); font-weight:500; font-size:11.5px; margin-left:8px;
+    flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .release-date{
+    background:var(--panel2); border:1px solid var(--border); color:var(--accent);
+    font-size:12.5px; padding:5px 7px; border-radius:6px; cursor:pointer; width:100%;
+  }
+  .release-date::-webkit-calendar-picker-indicator{ filter:invert(.7); cursor:pointer; }
+  .set-header-chev{ display:flex; align-items:center; justify-content:flex-start; flex-shrink:0; }
+  .chev{ transition:transform .15s; color:var(--muted);}
+  .set-group.collapsed .chev{ transform:rotate(-90deg); }
+  .items{ border-top:1px solid var(--border); }
+  .set-group.collapsed .items{ display:none; }
+  .item-row{
+    display:grid;
+    grid-template-columns: var(--col-check) 1fr var(--col-market) var(--col-price) var(--col-date);
+    gap:8px; align-items:center;
+    padding:8px 16px; border-bottom:1px solid rgba(255,255,255,0.03);
+    font-size:13.5px;
+  }
+  .item-wrap:last-child .item-row{ border-bottom:none; }
+  .item-wrap:last-child .item-watch-panel{ border-bottom:none; }
+  .item-row.owned{ background:rgba(76,175,109,0.06); }
+  .item-row.zero-market{
+    background:rgba(226,85,90,0.14);
+    box-shadow:inset 0 0 0 1px rgba(226,85,90,0.5);
+    border-radius:8px;
+  }
+  .item-row.zero-market .item-name{ color:var(--red); }
+  .item-row.zero-market [data-role=market]{ border-color:rgba(226,85,90,0.6); background:rgba(226,85,90,0.08); }
+  .item-row [data-role=market].market-hidden{ visibility:hidden; }
+  .item-row.watching{
+    background:var(--pink-bg);
+    box-shadow:inset 3px 0 0 0 var(--pink), inset 0 0 0 1px rgba(236,111,166,0.35);
+    border-radius:8px;
+  }
+  .item-row input[type=checkbox]{ width:18px; height:18px; accent-color:var(--green); cursor:pointer; justify-self:center;}
+  .item-name{ color:var(--text); display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-width:0; }
+  .item-name.owned-text{ color:var(--green); }
+  .item-name-text{ min-width:0; }
+  .item-seq{
+    display:inline-block; color:var(--muted); font-weight:600; font-size:10.5px;
+    font-variant-numeric:tabular-nums; background:var(--panel2); border:1px solid var(--border);
+    border-radius:5px; padding:1px 5px; vertical-align:middle;
+  }
+  .item-watch-toggle{
+    flex-shrink:0; width:19px; height:19px; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:50%; border:1px solid var(--border); background:transparent; color:var(--muted);
+    font-size:11px; cursor:pointer; opacity:.4; transition:opacity .15s, color .15s, border-color .15s, background .15s;
+    padding:0; line-height:1;
+  }
+  .item-row:hover .item-watch-toggle{ opacity:.8; }
+  .item-watch-toggle:hover{ opacity:1 !important; border-color:var(--pink); color:var(--pink); }
+  .item-watch-toggle.active{
+    opacity:1; background:var(--pink-bg); border-color:var(--pink); color:var(--pink);
+  }
+  .item-watch-panel{
+    display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+    padding:8px 16px 10px 16px;
+    background:var(--pink-bg); border-bottom:1px solid rgba(255,255,255,0.03);
+    font-size:12.5px;
+  }
+  .item-watch-panel.hidden{ display:none; }
+  .item-watch-label{ color:var(--pink); font-weight:700; font-size:11px; flex-shrink:0; white-space:nowrap; }
+  .item-watch-url{
+    flex:1; min-width:120px; background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    font-size:12.5px; padding:6px 9px; border-radius:6px;
+  }
+  .item-watch-url::placeholder{ color:var(--muted); }
+  .item-watch-visit{
+    flex-shrink:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    border-radius:6px; border:1px solid var(--border); background:var(--panel2); color:var(--muted);
+    cursor:pointer; font-size:13px; text-decoration:none;
+  }
+  .item-watch-visit:hover{ color:var(--pink); border-color:var(--pink); }
+  .item-watch-visit:disabled{ opacity:.35; cursor:not-allowed; pointer-events:none; }
+  .item-row input[type=number], .item-row input[type=date]{
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:5px 7px; border-radius:6px; font-size:12.5px; width:100%;
+  }
+  .item-row input:disabled{ opacity:.35; }
+  .date-wrap{ position:relative; width:100%; }
+  .date-wrap input[type=date]{ position:relative; z-index:1; }
+  .date-hint-overlay{
+    position:absolute; inset:0; z-index:2;
+    display:flex; align-items:center; padding:0 7px;
+    font-size:12.5px; color:var(--muted);
+    background:var(--panel2); border:1px solid var(--border); border-radius:6px;
+    pointer-events:none; white-space:nowrap; overflow:hidden;
+  }
+  .item-row input:disabled ~ .date-hint-overlay{ color:rgba(139,147,167,0.45); }
+  footer{ text-align:center; color:var(--muted); font-size:12px; padding:20px; }
+  footer p{ margin:0 0 6px 0; }
+  footer p:last-child{ margin-bottom:0; }
+  .hidden{ display:none !important; }
+  #importFile, #restoreFile{ display:none; }
+  @media (max-width:640px){
+    .item-row{ grid-template-columns: 26px 1fr; grid-template-areas: "cb name" ". market" ". price" ". date"; row-gap:4px;}
+    .item-row input[type=checkbox]{ grid-area:cb; }
+    .item-name{ grid-area:name; }
+    .item-row [data-role=market]{ grid-area:market; }
+    .item-row [data-role=price]{ grid-area:price; }
+    .item-row .date-wrap{ grid-area:date; }
+    .set-header{ grid-template-columns: 26px 1fr; grid-template-areas: "chk main" ". release"; row-gap:6px; }
+    .set-header-check{ grid-area:chk; }
+    .set-header-main{ grid-area:main; display:block; overflow:visible; }
+    .set-title, .set-code, .group-tag{ white-space:normal; }
+    .set-age{ flex-shrink:0; min-width:auto; overflow:visible; text-overflow:clip; white-space:normal; }
+    .set-header .date-wrap{ grid-area:release; }
+    .set-header-chev{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <svg class="logo-mark" width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g transform="rotate(-12 16 16)"><rect x="9" y="4" width="14" height="20" rx="2.5" fill="#15110b" stroke="#c9a24b" stroke-width="1.3"/></g>
+      <rect x="9" y="6" width="14" height="20" rx="2.5" fill="#1c160e" stroke="#c9a24b" stroke-width="1.3"/>
+      <g transform="rotate(10 16 16)">
+        <rect x="9" y="8" width="14" height="20" rx="2.5" fill="#241b10" stroke="#c9a24b" stroke-width="1.3"/>
+        <path d="M16 15.5 L17.6 18 L16 20.5 L14.4 18 Z" fill="#c9a24b"/>
+      </g>
+    </svg>
+    MTG Booster Pack Collection Tracker <span class="pro-badge">PRO</span>
+  </h1>
+  <div class="sub">Every booster pack ever released, sorted by set. Check off what you've got, add the price and date you bought it, set the release date for the whole set — it all saves automatically right here in your browser. <button type="button" id="helpBtn" class="help-link" aria-label="Open the how-this-works guide">How this works</button></div>
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search a set or pack..." aria-label="Search sets or packs">
+    <select id="filter" aria-label="Filter packs">
+      <option value="all">Show all</option>
+      <option value="owned">Owned only</option>
+      <option value="missing">Missing only</option>
+      <option value="has-market">Has market price</option>
+    </select>
+    <select id="sortSel" aria-label="Sort order">
+      <option value="default">Default order</option>
+      <option value="group">Group by series</option>
+      <option value="price-desc">Price paid: priciest first</option>
+      <option value="price-asc">Price paid: cheapest first</option>
+      <option value="market-desc">Market price: highest first</option>
+      <option value="market-asc">Market price: lowest first</option>
+      <option value="release-desc">Release date: newest first</option>
+      <option value="release-asc">Release date: oldest first</option>
+    </select>
+    <button id="expandAll">Expand all</button>
+    <button id="collapseAll">Collapse all</button>
+    <button id="resetBtn">Clear data</button>
+    <button id="yearStatsBtn">Packs by year</button>
+    <button class="primary" id="addSetBtn">+ Add new set</button>
+    <button id="settingsBtn" aria-label="Open settings">⚙ Settings</button>
+    <button class="primary" id="exportBtn">Export CSV</button>
+    <button class="secondary" id="importBtn">Import CSV</button>
+    <input type="file" id="importFile" accept=".csv">
+    <button class="primary" id="backupBtn">⬇ Backup (JSON)</button>
+    <button class="secondary" id="restoreBtn">⬆ Restore (JSON)</button>
+    <input type="file" id="restoreFile" accept=".json">
+  </div>
+  <div class="stats">
+    <div class="stat">Owned<b id="statOwned">0</b></div>
+    <div class="stat">Out of<b id="statTotal">0</b></div>
+    <div class="stat">Total spent<b id="statSpent">0</b></div>
+    <div class="stat">Collection value<b id="statValue">0</b></div>
+    <div class="stat">Sets<b id="statSets">0</b></div>
+    <div class="stat">Sets completed<b id="statComplete">0</b></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Overall collection progress</span><span id="progressPct">0%</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+</header>
+
+<div class="onboarding-banner hidden" id="onboardingBanner">
+  <div class="onboarding-box">
+    <button class="modal-close" id="onboardingClose" aria-label="Close this guide">&times;</button>
+    <div class="modal-title">How this works</div>
+    <ul class="onboarding-list">
+      <li>Click a set's header to expand or collapse it. Check off each pack you own.</li>
+      <li>Fill in <b>Market price</b> on a pack to track its value — a price of 0 flags it in red as currently unbuyable.</li>
+      <li>Fill in a set's <b>Release date</b> to unlock its age badge, chronological pack numbering, and the "Packs by year" chart.</li>
+      <li>The <b>i</b> bubble next to some set names opens a bit of Magic history trivia about that set.</li>
+      <li>Click the <b>☆</b> next to a pack to mark it as something you're planning to buy, and paste a link to where you found it.</li>
+      <li>Use <b>Export CSV</b> for a spreadsheet-friendly copy, or <b>Backup (JSON)</b> for a full, restorable backup of everything (including your plan-to-buy list and custom sets).</li>
+    </ul>
+    <div class="modal-actions">
+      <button type="button" id="onboardingDismiss" class="primary">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-box" style="max-width:420px;">
+    <button class="modal-close" id="settingsModalClose" aria-label="Close settings">&times;</button>
+    <div class="modal-title">Settings</div>
+    <div class="form-group">
+      <label class="form-label" for="currencySel">Currency</label>
+      <select id="currencySel" class="form-input">
+        <option value="€">€ Euro</option>
+        <option value="$">$ US Dollar</option>
+        <option value="£">£ British Pound</option>
+        <option value="Kč">Kč Czech Koruna</option>
+        <option value="zł">zł Polish Złoty</option>
+        <option value="¥">¥ Yen</option>
+      </select>
+      <div class="form-hint">Changes how money is displayed on screen. CSV export/import always stays in a fixed format, regardless of this setting.</div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" id="settingsCloseBtn" class="primary">Done</button>
+    </div>
+  </div>
+</div>
+
+<main id="app"></main>
+
+<div class="modal-overlay hidden" id="milestoneModal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="yearModal">
+  <div class="modal-box" style="max-width:520px;">
+    <button class="modal-close" id="yearModalClose" aria-label="Close">&times;</button>
+    <div class="modal-title">Booster packs by release year</div>
+    <div class="modal-desc" style="margin-bottom:14px;">Based on the release date you've filled in per set. Green shows what you already own for that year; the lighter bar behind it is the total tracked.</div>
+    <div id="yearStatsBody"></div>
+  </div>
+</div>
+
+<div class="chart-tooltip" id="chartTooltip"></div>
+
+<div class="modal-overlay hidden" id="addSetModal">
+  <div class="modal-box" style="max-width:580px;">
+    <button class="modal-close" id="addSetModalClose" aria-label="Close">&times;</button>
+    <div class="modal-title">Add a new set</div>
+    <div class="modal-desc" style="margin-bottom:18px;">For a set that isn't in the built-in list yet. You can delete it again later (🗑 next to its name) if you need to fix something.</div>
+
+    <div class="form-group">
+      <label class="form-label">Set name</label>
+      <input type="text" id="newSetName" class="form-input" placeholder="e.g. Edge of Eternities: Stellar Sights">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Set code</label>
+      <input type="text" id="newSetCode" class="form-input form-input-code" placeholder="e.g. EOS" maxlength="8">
+      <div class="form-hint">Short and unique — this is what shows in the little badge next to the set name.</div>
+      <div class="form-error hidden" id="newSetCodeError"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Group / block <span class="form-hint" style="display:inline;">(optional)</span></label>
+      <input type="text" id="newSetGroup" class="form-input" list="groupSuggestions" placeholder="e.g. Masters Series, Universes Beyond...">
+      <div class="form-hint">Shown as a small tag next to the set code, and used by the "Group by series" sort order. Pick an existing one from the list to keep things consistent, or type a new one.</div>
+      <datalist id="groupSuggestions"></datalist>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Boosters in this set</label>
+      <div class="form-hint" style="margin-bottom:8px;">Just the pack type — the set name gets added automatically. Pick a suggestion or type your own.</div>
+      <div id="newSetPacksList"></div>
+      <button type="button" id="addPackRowBtn" class="ghost-btn">+ Add another pack</button>
+      <datalist id="packTypeSuggestions">
+        <option value="Draft Booster Pack">
+        <option value="Set Booster Pack">
+        <option value="Play Booster Pack">
+        <option value="Collector Booster Pack">
+        <option value="Special Edition Collector Booster Pack">
+        <option value="Jumpstart Booster Pack">
+        <option value="Booster Pack">
+      </datalist>
+    </div>
+
+    <div class="form-group milestone-toggle-wrap">
+      <label class="form-checkbox-label">
+        <input type="checkbox" id="newSetMilestoneToggle">
+        Add a milestone for this set <span class="form-hint" style="display:inline;">(optional — shows a gold border and an "i" info button)</span>
+      </label>
+      <div id="newSetMilestoneFields" class="hidden">
+        <input type="text" id="newSetMYear" class="form-input" placeholder="Year, e.g. 2026" style="max-width:160px; margin-bottom:8px;">
+        <input type="text" id="newSetMTitle" class="form-input" placeholder="Milestone title" style="margin-bottom:8px;">
+        <textarea id="newSetMDesc" class="form-input" placeholder="Milestone description" rows="3"></textarea>
+      </div>
+    </div>
+
+    <div class="form-error hidden" id="newSetFormError"></div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelAddSetBtn" class="ghost-btn">Cancel</button>
+      <button type="button" id="saveAddSetBtn" class="primary">Add set</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>All your data is saved locally — right here in this browser, nothing gets sent anywhere else.</p>
+  <p>Feel free to export it any time, so you can pick up right where you left off even after closing the browser.</p>
+</footer>
+
+<script>
+// ---- DATA ----
+const DATA = [
+["Star Trek (TRK)", ["Star Trek Play Booster Pack", "Star Trek Collector Booster Pack"]],
+["Mystery Booster Commander Edition (MBC)", ["Mystery Booster Commander Edition Booster Pack"]],
+["Reality Fracture (FRA)", ["Reality Fracture Play Booster Pack", "Reality Fracture Collector Booster Pack"]],
+["The Zeta Set (SLZ)", ["Secret Lair x MSCHF - The Zeta Set Booster Pack"]],
+["The Hobbit (HOB)", ["The Hobbit Play Booster Pack", "The Hobbit Collector Booster Pack"]],
+["Marvel Super Heroes (MSH)", ["Marvel Super Heroes Play Booster Pack", "Marvel Super Heroes Jumpstart Booster Pack", "Marvel Super Heroes Collector Booster Pack"]],
+["Secrets of Strixhaven (SOS)", ["Secrets of Strixhaven Play Booster Pack", "Secrets of Strixhaven Collector Booster Pack"]],
+["Teenage Mutant Ninja Turtles (TMT)", ["Teenage Mutant Ninja Turtles Play Booster Pack", "Teenage Mutant Ninja Turtles Collector Booster Pack"]],
+["Lorwyn Eclipsed (ECL)", ["Lorwyn Eclipsed Play Booster Pack", "Lorwyn Eclipsed Collector Booster Pack"]],
+["Avatar: The Last Airbender (TLA)", ["Avatar The Last Airbender Play Booster Pack", "Avatar The Last Airbender Collector Booster Pack"]],
+["Avatar: The Last Airbender Eternal (TLE)", ["Avatar The Last Airbender Jumpstart Booster Pack"]],
+["Marvel's Spider-Man (SPM)", ["Marvels Spider Man Play Booster Pack", "Marvels Spider Man Collector Booster Pack"]],
+["Edge of Eternities (EOE)", ["Edge of Eternities Play Booster Pack", "Edge of Eternities Collector Booster Pack"]],
+["Final Fantasy (FIN)", ["Final Fantasy Play Booster Pack", "Final Fantasy Collector Booster Pack", "Final Fantasy Chocobo Booster Pack"]],
+["Tarkir: Dragonstorm (TDM)", ["Tarkir Dragonstorm Play Booster Pack", "Tarkir Dragonstorm Collector Booster Pack"]],
+["Aetherdrift (DFT)", ["Aetherdrift Play Booster Pack", "Aetherdrift Collector Booster Pack"]],
+["Innistrad Remastered (INR)", ["Innistrad Remastered Play Booster Pack", "Innistrad Remastered Collector Booster Pack"]],
+["Foundations (FDN)", ["Foundations Play Booster Pack", "Foundations Collector Booster Pack"]],
+["Foundations Jumpstart (J25)", ["Foundations Jumpstart Booster Pack"]],
+["Duskmourn: House of Horror (DSK)", ["Duskmourn House of Horror Play Booster Pack", "Duskmourn House of Horror Collector Booster Pack"]],
+["Bloomburrow (BLB)", ["Bloomburrow Play Booster Pack", "Bloomburrow Collector Booster Pack"]],
+["Mystery Booster 2 (MB2)", ["Mystery Booster 2 Booster Pack"]],
+["Assassin's Creed (ACR)", ["Assassins Creed Collector Booster Pack", "Assassins Creed Beyond Booster Pack"]],
+["Modern Horizons 3 (MH3)", ["Modern Horizons 3 Play Booster Pack", "Modern Horizons 3 Collector Booster Pack"]],
+["Outlaws of Thunder Junction (OTJ)", ["Outlaws of Thunder Junction Play Booster Pack", "Outlaws of Thunder Junction Collector Booster Pack"]],
+["Fallout (PIP)", ["Fallout Collector Booster Pack"]],
+["Ravnica: Clue Edition (CLU)", ["Ravnica Clue Edition Booster Pack"]],
+["Murders at Karlov Manor (MKM)", ["Murders at Karlov Manor Play Booster Pack", "Murders at Karlov Manor Collector Booster Pack"]],
+["Ravnica Remastered (RVR)", ["Ravnica Remastered Draft Booster Pack", "Ravnica Remastered Collector Booster Pack"]],
+["The Lost Caverns of Ixalan (LCI)", ["The Lost Caverns of Ixalan Draft Booster Pack", "The Lost Caverns of Ixalan Set Booster Pack", "The Lost Caverns of Ixalan Collector Booster Pack"]],
+["Doctor Who (WHO)", ["Doctor Who Collector Booster Pack"]],
+["Wilds of Eldraine (WOE)", ["Wilds of Eldraine Draft Booster Pack", "Wilds of Eldraine Set Booster Pack", "Wilds of Eldraine Collector Booster Pack"]],
+["Commander Masters (CMM)", ["Commander Masters Draft Booster Pack", "Commander Masters Set Booster Pack", "Commander Masters Collector Booster Pack"]],
+["The Lord of the Rings: Tales of Middle-earth (LTR)", ["The Lord of the Rings Tales of Middle earth Draft Booster Pack", "The Lord of the Rings Tales of Middle earth Set Booster Pack", "The Lord of the Rings Tales of Middle earth Jumpstart Booster Pack", "The Lord of the Rings Tales of Middle earth Jumpstart Vol 2 Booster Pack", "The Lord of the Rings Tales of Middle earth Collector Booster Pack", "The Lord of the Rings Tales of Middle earth Special Edition Collector Booster Pack"]],
+["March of the Machine: The Aftermath (MAT)", ["March of the Machine The Aftermath Collector Booster Pack", "March of the Machine The Aftermath Epilogue Booster Pack"]],
+["March of the Machine (MOM)", ["March of the Machine Draft Booster Pack", "March of the Machine Set Booster Pack", "March of the Machine Jumpstart Booster Pack", "March of the Machine Collector Booster Pack"]],
+["Phyrexia: All Will Be One (ONE)", ["Phyrexia All Will Be One Draft Booster Pack", "Phyrexia All Will Be One Set Booster Pack", "Phyrexia All Will Be One Jumpstart Booster Pack", "Phyrexia All Will Be One Collector Booster Pack"]],
+["Dominaria Remastered (DMR)", ["Dominaria Remastered Draft Booster Pack", "Dominaria Remastered Collector Booster Pack"]],
+["Jumpstart 2022 (J22)", ["Jumpstart 2022 Booster Pack"]],
+["30th Anniversary Edition (30A)", ["Magic 30th Anniversary Edition Booster Pack"]],
+["The Brothers' War (BRO)", ["The Brothers' War Draft Booster Pack", "The Brothers' War Set Booster Pack", "The Brothers' War Jumpstart Booster Pack", "The Brothers' War Collector Booster Pack"]],
+["Unfinity (UNF)", ["Unfinity Draft Booster Pack", "Unfinity Collector Booster Pack"]],
+["Dominaria United (DMU)", ["Dominaria United Draft Booster Pack", "Dominaria United Set Booster Pack", "Dominaria United Jumpstart Booster Pack", "Dominaria United Collector Booster Pack"]],
+["Double Masters 2022 (2X2)", ["Double Masters 2022 Draft Booster Pack", "Double Masters 2022 Collector Booster Pack"]],
+["Commander Legends: Battle for Baldur's Gate (CLB)", ["Commander Legends Battle for Baldurs Gate Draft Booster Pack", "Commander Legends Battle for Baldurs Gate Set Booster Pack", "Commander Legends Battle for Baldurs Gate Collector Booster Pack"]],
+["Streets of New Capenna (SNC)", ["Streets of New Capenna Draft Booster Pack", "Streets of New Capenna Set Booster Pack", "Streets of New Capenna Collector Booster Pack"]],
+["Kamigawa: Neon Dynasty (NEO)", ["Kamigawa Neon Dynasty Draft Booster Pack", "Kamigawa Neon Dynasty Set Booster Pack", "Kamigawa Neon Dynasty Collector Booster Pack"]],
+["Innistrad: Double Feature (DBL)", ["Innistrad Double Feature Draft Booster Pack"]],
+["Innistrad: Crimson Vow (VOW)", ["Innistrad Crimson Vow Draft Booster Pack", "Innistrad Crimson Vow Set Booster Pack", "Innistrad Crimson Vow Collector Booster Pack"]],
+["Innistrad: Midnight Hunt (MID)", ["Innistrad Midnight Hunt Draft Booster Pack", "Innistrad Midnight Hunt Set Booster Pack", "Innistrad Midnight Hunt Collector Booster Pack"]],
+["Adventures in the Forgotten Realms (AFR)", ["Adventures in the Forgotten Realms Draft Booster Pack", "Adventures in the Forgotten Realms Set Booster Pack", "Adventures in the Forgotten Realms Collector Booster Pack"]],
+["Modern Horizons 2 (MH2)", ["Modern Horizons 2 Draft Booster Pack", "Modern Horizons 2 Set Booster Pack", "Modern Horizons 2 Collector Booster Pack"]],
+["Strixhaven: School of Mages (STX)", ["Strixhaven School of Mages Draft Booster Pack", "Strixhaven School of Mages Set Booster Pack", "Strixhaven School of Mages Collector Booster Pack"]],
+["Time Spiral Remastered (TSR)", ["Time Spiral Remastered Draft Booster Pack"]],
+["Kaldheim (KHM)", ["Kaldheim Draft Booster Pack", "Kaldheim Set Booster Pack", "Kaldheim Collector Booster Pack"]],
+["Commander Legends (CMR)", ["Commander Legends Draft Booster Pack", "Commander Legends Collector Booster Pack"]],
+["Zendikar Rising (ZNR)", ["Zendikar Rising Draft Booster Pack", "Zendikar Rising Set Booster Pack", "Zendikar Rising Collector Booster Pack"]],
+["Double Masters (2XM)", ["Double Masters Booster Pack"]],
+["Jumpstart (JMP)", ["Jumpstart Booster Pack"]],
+["Core Set 2021 (M21)", ["Core Set 2021 Draft Booster Pack", "Core Set 2021 Collector Booster Pack"]],
+["Ikoria: Lair of Behemoths (IKO)", ["Ikoria Lair of Behemoths Draft Booster Pack", "Ikoria Lair of Behemoths Collector Booster Pack"]],
+["Theros Beyond Death (THB)", ["Theros Beyond Death Draft Booster Pack", "Theros Beyond Death Collector Booster Pack"]],
+["Mystery Booster (MB1)", ["Mystery Booster Booster Pack (Convention Edition)", "Mystery Booster Booster Pack (Retail Edition)"]],
+["Throne of Eldraine (ELD)", ["Throne of Eldraine Draft Booster Pack", "Throne of Eldraine Collector Booster Pack"]],
+["Core Set 2020 (M20)", ["Core Set 2020 Booster Pack"]],
+["Modern Horizons (MH1)", ["Modern Horizons Booster Pack"]],
+["War of the Spark (WAR)", ["War of the Spark Booster Pack"]],
+["Ravnica Allegiance (RNA)", ["Ravnica Allegiance Collector Booster Pack", "Ravnica Allegiance Booster Pack"]],
+["Ultimate Masters (UMA)", ["Ultimate Masters Booster Pack"]],
+["Guilds of Ravnica (GRN)", ["Guilds of Ravnica Booster Pack"]],
+["Core Set 2019 (M19)", ["Core Set 2019 Booster Pack"]],
+["Battlebond (BBD)", ["Battlebond Booster Pack"]],
+["Dominaria (DOM)", ["Dominaria Booster Pack"]],
+["Masters 25 (A25)", ["Masters 25 Booster Pack"]],
+["Rivals of Ixalan (RIX)", ["Rivals of Ixalan Booster Pack"]],
+["Unstable (UST)", ["Unstable Booster Pack"]],
+["Iconic Masters (IMA)", ["Iconic Masters Booster Pack"]],
+["Ixalan (XLN)", ["Ixalan Booster Pack"]],
+["Hour of Devastation (HOU)", ["Hour of Devastation Booster Pack"]],
+["Amonkhet (AKH)", ["Amonkhet Booster Pack"]],
+["Modern Masters 2017 (MM3)", ["Modern Masters 2017 Booster Pack"]],
+["Aether Revolt (AER)", ["Aether Revolt Booster Pack"]],
+["Kaladesh (KLD)", ["Kaladesh Booster Pack"]],
+["Conspiracy: Take the Crown (CN2)", ["Conspiracy Take the Crown Booster Pack"]],
+["Eldritch Moon (EMN)", ["Eldritch Moon Booster Pack"]],
+["Eternal Masters (EMA)", ["Eternal Masters Booster Pack"]],
+["Shadows over Innistrad (SOI)", ["Shadows over Innistrad Booster Pack"]],
+["Oath of the Gatewatch (OGW)", ["Oath of the Gatewatch Booster Pack"]],
+["Battle for Zendikar (BFZ)", ["Battle for Zendikar Booster Pack"]],
+["Magic Origins (ORI)", ["Magic Origins Booster Pack"]],
+["Modern Masters 2015 (MM2)", ["Modern Masters 2015 Booster Pack"]],
+["Dragons of Tarkir (DTK)", ["Dragons of Tarkir Booster Pack"]],
+["Fate Reforged (FRF)", ["Fate Reforged Booster Pack"]],
+["Khans of Tarkir (KTK)", ["Khans of Tarkir Booster Pack"]],
+["Magic 2015 (M15)", ["2015 Core Set Booster Pack"]],
+["Conspiracy (CNS)", ["Conspiracy Booster Pack"]],
+["Journey into Nyx (JOU)", ["Journey Into Nyx Booster Pack"]],
+["Born of the Gods (BNG)", ["Born of the Gods Booster Pack"]],
+["Theros (THS)", ["Theros Booster Pack"]],
+["Magic 2014 (M14)", ["2014 Core Set Booster Pack"]],
+["Modern Masters (MMA)", ["Modern Masters Booster Pack"]],
+["Dragon's Maze (DGM)", ["Dragons Maze Booster Pack"]],
+["Gatecrash (GTC)", ["Gatecrash Booster Pack"]],
+["Return to Ravnica (RTR)", ["Return to Ravnica Booster Pack"]],
+["Magic 2013 (M13)", ["2013 Core Set Booster Pack"]],
+["Avacyn Restored (AVR)", ["Avacyn Restored Booster Pack"]],
+["Dark Ascension (DKA)", ["Dark Ascension Booster Pack"]],
+["Innistrad (ISD)", ["Innistrad Booster Pack"]],
+["Magic 2012 (M12)", ["2012 Core Set Booster Pack"]],
+["New Phyrexia (NPH)", ["New Phyrexia Booster Pack"]],
+["Mirrodin Besieged (MBS)", ["Mirrodin Besieged Booster Pack", "Mirrodin Besieged Mirran Faction Booster Pack", "Mirrodin Besieged Phyrexian Faction Booster Pack"]],
+["Scars of Mirrodin (SOM)", ["Scars of Mirrodin Booster Pack"]],
+["Magic 2011 (M11)", ["2011 Core Set Booster Pack"]],
+["Duels of the Planeswalkers (DPA)", ["Duels of the Planeswalkers 2015 Promo Pack"]],
+["Rise of the Eldrazi (ROE)", ["Rise of the Eldrazi Booster Pack"]],
+["Worldwake (WWK)", ["Worldwake Booster Pack"]],
+["Zendikar (ZEN)", ["Zendikar Booster Pack"]],
+["Magic 2010 (M10)", ["2010 Core Set Booster Pack"]],
+["Alara Reborn (ARB)", ["Alara Reborn Booster Pack"]],
+["Conflux (CON)", ["Conflux Booster Pack"]],
+["Shards of Alara (ALA)", ["Shards of Alara Booster Pack", "Shards of Alara Premium Foil Booster Pack"]],
+["Eventide (EVE)", ["Eventide Booster Pack"]],
+["Shadowmoor (SHM)", ["Shadowmoor Booster Pack"]],
+["Morningtide (MOR)", ["Morningtide Booster Pack"]],
+["Lorwyn (LRW)", ["Lorwyn Booster Pack"]],
+["Tenth Edition (10E)", ["Tenth Edition Booster Pack"]],
+["Future Sight (FUT)", ["Future Sight Booster Pack"]],
+["Planar Chaos (PLC)", ["Planar Chaos Booster Pack"]],
+["Time Spiral (TSP)", ["Time Spiral Booster Pack"]],
+["Coldsnap (CSP)", ["Coldsnap Booster Pack"]],
+["Dissension (DIS)", ["Dissension Booster Pack"]],
+["Guildpact (GPT)", ["Guildpact Booster Pack"]],
+["Ravnica: City of Guilds (RAV)", ["Ravnica Booster Pack"]],
+["Ninth Edition (9ED)", ["Ninth Edition Booster Pack"]],
+["Saviors of Kamigawa (SOK)", ["Saviors of Kamigawa Booster Pack"]],
+["Betrayers of Kamigawa (BOK)", ["Betrayers of Kamigawa Booster Pack"]],
+["Unhinged (UNH)", ["Unhinged Booster Pack"]],
+["Champions of Kamigawa (CHK)", ["Champions of Kamigawa Booster Pack"]],
+["Fifth Dawn (5DN)", ["Fifth Dawn Booster Pack"]],
+["Darksteel (DST)", ["Darksteel Booster Pack"]],
+["Mirrodin (MRD)", ["Mirrodin Booster Pack"]],
+["Eighth Edition (8ED)", ["Eighth Edition Advanced Booster Pack", "Eighth Edition Booster Pack"]],
+["Scourge (SCG)", ["Scourge Booster Pack"]],
+["Legions (LGN)", ["Legions Booster Pack"]],
+["Onslaught (ONS)", ["Onslaught Booster Pack"]],
+["Judgment (JUD)", ["Judgment Booster Pack"]],
+["Torment (TOR)", ["Torment Booster Pack"]],
+["Odyssey (ODY)", ["Odyssey Booster Pack"]],
+["Apocalypse (APC)", ["Apocalypse Booster Pack"]],
+["Seventh Edition (7ED)", ["Seventh Edition Booster Pack"]],
+["Planeshift (PLS)", ["Planeshift Booster Pack"]],
+["Invasion (INV)", ["Invasion Booster Pack"]],
+["Prophecy (PCY)", ["Prophecy Booster Pack"]],
+["Starter 2000 (S00)", ["Starter 2000 Advanced Booster Pack"]],
+["Nemesis (NEM)", ["Nemesis Booster Pack"]],
+["Mercadian Masques (MMQ)", ["Mercadian Masques Booster Pack"]],
+["Starter 1999 (S99)", ["Starter 1999 Booster Pack"]],
+["Urza's Destiny (UDS)", ["Urzas Destiny Booster Pack"]],
+["Portal Three Kingdoms (PTK)", ["Portal Three Kingdoms Booster Pack"]],
+["Classic Sixth Edition (6ED)", ["Classic Sixth Edition Booster Pack"]],
+["Urza's Legacy (ULG)", ["Urzas Legacy Booster Pack"]],
+["Urza's Saga (USG)", ["Urzas Saga Booster Pack"]],
+["Unglued (UGL)", ["Unglued Booster Pack"]],
+["Portal Second Age (P02)", ["Portal Second Age Booster Pack"]],
+["Exodus (EXO)", ["Exodus Booster Pack"]],
+["Stronghold (STH)", ["Stronghold Booster Pack"]],
+["Tempest (TMP)", ["Tempest Booster Pack"]],
+["Weatherlight (WTH)", ["Weatherlight Booster Pack"]],
+["Portal (POR)", ["Portal Booster Pack"]],
+["Fifth Edition (5ED)", ["Fifth Edition Booster Pack"]],
+["Visions (VIS)", ["Visions Booster Pack"]],
+["Mirage (MIR)", ["Mirage Booster Pack"]],
+["Alliances (ALL)", ["Alliances Booster Pack"]],
+["Homelands (HML)", ["Homelands Booster Pack"]],
+["Chronicles (CHR)", ["Chronicles Booster Pack"]],
+["Ice Age (ICE)", ["Ice Age Booster Pack"]],
+["Fourth Edition (4ED)", ["Fourth Edition Booster Pack"]],
+["Fallen Empires (FEM)", ["Fallen Empires Booster Pack"]],
+["The Dark (DRK)", ["The Dark Booster Pack"]],
+["Summer Magic / Edgar (SUM)", ["Summer Magic Booster Pack"]],
+["Legends (LEG)", ["Legends Booster Pack"]],
+["Revised Edition (3ED)", ["Revised Edition Booster Pack"]],
+["Antiquities (ATQ)", ["Antiquities Booster Pack"]],
+["Arabian Nights (ARN)", ["Arabian Nights Booster Pack"]],
+["Unlimited Edition (2ED)", ["Unlimited Booster Pack"]],
+["Limited Edition Beta (LEB)", ["Beta Booster Pack"]],
+["Limited Edition Alpha (LEA)", ["Alpha Booster Pack"]],
+];
+
+// ---- MILESTONES: set code -> { year, title, desc } ----
+const MILESTONES = {
+  "LEA": [{ year:"1993", title:"The first booster packs (Alpha)", desc:"MTG debuts the concept of 15 playable cards per pack (11 common, 3 uncommon, 1 rare)." }],
+  "ARN": [{ year:"1993–1994", title:"The era of tiny 8-card boosters", desc:"Small expansions like Arabian Nights and The Dark only came in 8-card packs due to their limited print runs. The 15-card format later became the permanent standard for main sets." }],
+  "DRK": [{ year:"1993–1994", title:"The era of tiny 8-card boosters", desc:"Small expansions like Arabian Nights and The Dark only came in 8-card packs due to their limited print runs. The 15-card format later became the permanent standard for main sets." }],
+  "USG": [{ year:"1998", title:"The very first foil card ever", desc:"The Urza's Saga prerelease promo Lightning Dragon becomes the first-ever official foil card, with the signature shiny surface and shooting-star stamp." }],
+  "ULG": [{ year:"1999", title:"The first foils inside booster packs", desc:"Urza's Legacy is a revolution — premium foil versions of cards start getting randomly packed straight into regular boosters." }],
+  "ALA": [{ year:"2008", title:"Mythic rarity is introduced", desc:"Shards of Alara brings a brand-new, rarer-than-rare tier called \"Mythic Rare,\" permanently changing the math of what you can pull from the rare slot." }],
+  "RNA": [{ year:"2019", title:"The first-ever Collector Booster (limited test run)", desc:"Ravnica Allegiance quietly introduces the first-ever Collector Booster — but only as a very limited experimental test run, sold exclusively in Japan and North America, and even there hard to find. It was not yet a regular, widely-available product." }],
+  "ELD": [{ year:"2019", title:"Collector Booster goes mainstream, Theme Boosters arrive, and \"Draft Booster\" is born", desc:"Throne of Eldraine turns the Collector Booster — first tested a few months earlier in Ravnica Allegiance — into a regular, permanent, and widely-available pack type built entirely around foils, alt-art, and special collector pieces. The set also launches Theme Boosters (35-card mono-color packs), and with three pack types now on shelves, the plain old 15-card booster gets officially renamed the \"Draft Booster\" to tell it apart from the others." }, { year:"2019", title:"The Showcase frame era", desc:"Throne of Eldraine launches the \"Project Booster Fun\" initiative, introducing unique, themed \"Showcase\" card frames that alter a card's visual identity to match the aesthetic of its specific plane (starting with Eldraine's fairy-tale storybook frames)." }],
+  "JMP": [{ year:"2020", title:"The first Jumpstart Booster", desc:"The standalone Jumpstart set launches. These 20-card themed packs are meant to be opened two at a time and mashed together into an instant playable deck." }],
+  "ZNR": [{ year:"2020", title:"The first Set Booster", desc:"Zendikar Rising introduces the Set Booster, a new pack type between the Draft Booster and the Collector Booster, aimed at players who want higher-value pulls without drafting." }],
+  "SLZ": [{ year:"2026", title:"The first randomized Secret Lair booster pack", desc:"Secret Lair x MSCHF: The Zeta Set is the first randomized booster product ever sold through Secret Lair. Instead of the usual fixed card list, each $19.92 pack holds 7 random cards (from a 121-card pool) styled after Magic's hand-cut 1992 playtest cards — a first for how Secret Lair sells product." }],
+  "BRO": [{ year:"2022", title:"Mass serialized cards are born", desc:"The Brothers' War brings 63 different retro-frame artifacts numbered up to 500 copies (Double Rainbow foil) as a regular part of Collector Boosters." }],
+  "MAT": [{ year:"2023", title:"Failed experiment: Epilogue Boosters", desc:"For the March of the Machine: The Aftermath minset, tiny 5-card packs with no commons were introduced. The community rejected them for poor value and the format was scrapped immediately." }],
+  "LTR": [{ year:"2023", title:"🚨 The absolute milestone: the first-ever \"1 of 1\" card", desc:"The Lord of the Rings: Tales of Middle-earth releases The One Ring (001/001). Written in the Black Speech of Mordor, it was pulled in Canada and bought by rapper Post Malone for $2 million, making it the most expensive MTG card ever." }],
+  "MOM": [{ year:"2023", title:"Mass serialization begins", desc:"March of the Machine kicks off Magic's era of mass-serialized cards, printing 65 different Multiverse Legends crossover characters as XXX/500 numbered inserts. The flood carries into the rest of 2023–2024 with Wilds of Eldraine's Enchanting Tales, Ravnica Remastered's retro-frame cards, and Universes Beyond crossovers like Doctor Who, Fallout, and Assassin's Creed." }],
+  "WOE": [{ year:"2023", title:"Enchanting Tales join the serialization flood", desc:"Part of the serialization flood, introducing 20 unique anime-art Enchanting Tales limited to 250 copies." }],
+  "RVR": [{ year:"2024", title:"64 retro-frame cards join the serialization flood", desc:"Contributes 64 different retro-frame serialized cards (including all 10 shock lands) to the mass-serialization era." }],
+  "WHO": [{ year:"2023", title:"Numbered cards by Doctor incarnation", desc:"Contributes numbered crossover cards tied to each Doctor incarnation, part of the same 2023–2024 serialization wave." }],
+  "PIP": [{ year:"2024", title:"S.P.E.C.I.A.L. Bobbleheads join the serialization flood", desc:"Brings the iconic S.P.E.C.I.A.L. Bobbleheads as exclusive serialized crossover pieces." }],
+  "ACR": [{ year:"2024", title:"Historical figures in their native language", desc:"Introduces historical figures printed with serialized text in their native languages (e.g., Leonardo da Vinci in Italian)." }],
+  "LCI": [{ year:"2023", title:"The introduction of Cosmium Neon Ink", desc:"Instead of traditional serialization, this set features ultra-rare neon-colored variants of Mana Crypt and Cavern of Souls with microscopic pull rates." }],
+  "MKM": [{ year:"2024", title:"The rise of the Play Booster (market unification)", desc:"Murders at Karlov Manor marks the definitive end of Draft and Set Boosters. They merge into one single format — the Play Booster, unified for both playing and collecting." }],
+  "MH3": [{ year:"2024", title:"The Eldrazi Titans' 250-copy concept art (not a true \"1 of 1\")", desc:"Modern Horizons 3's alternate concept-art versions of the three Eldrazi Titans (Emrakul, the World Anew; Ulamog, the Defiler; Kozilek, the Broken Reality) were each printed in a strictly limited run of 250 copies worldwide (XXX/250) — not as unique 001/001 cards. The One Ring from The Lord of the Rings: Tales of Middle-earth (2023) remains the only true \"1 of 1\" card ever printed in Magic's history." }],
+  "INR": [{ year:"2025", title:"The era of exclusive \"Headliners\" begins", desc:"Wizards moves from dozens of numbered cards per set down to just one. Innistrad Remastered opens 2025 with Edgar Markov as the very first Headliner — a single serialized card per set — a model that continues through Aetherdrift, Tarkir: Dragonstorm, Final Fantasy, and Reality Fracture, each with their own unique Headliner." }],
+  "DFT": [{ year:"2025", title:"The Aetherspark Headliner", desc:"Features The Aetherspark as the sole serialized Headliner." }],
+  "TDM": [{ year:"2025", title:"The Mox Jasper Headliner", desc:"Features Mox Jasper as the sole serialized Headliner." }],
+  "FIN": [{ year:"2025", title:"The ultimate Headliner exception", desc:"The ultimate Headliner exception: Traveling Gold Chocobo, uniquely restricted to an ultra-limited run of just 77 copies for Final Fantasy VII flavor." }],
+  "FRA": [{ year:"2025", title:"The Bloodline Recollector Headliner", desc:"Features Bloodline Recollector as the sole serialized Headliner." }],
+  "UGL": [{ year:"1998", title:"The first full-art basic lands", desc:"The joke \"silver border\" set Unglued introduces full-art basic lands — the first time Magic ever removed the large text box from lands to let Christopher Rush's and John Avon's artwork take center stage in a stunning vertical frame." }],
+  "ZEN": [{ year:"2009", title:"The first full-art basic lands in a real (tournament-legal) set", desc:"Zendikar is the first regular, tournament-legal expansion to include full-art basic lands, taking the joke-set gimmick from Unglued and making it a real chase feature in a mainline booster." }],
+  "UNH": [{ year:"2004", title:"The first borderless-style lands (the edge-to-edge evolution)", desc:"Following its predecessor, the second joke set Unhinged introduces a stunning new generation of full-art basic lands. Illustrated by John Avon, these cards are the first to practically eliminate the inner frame completely, letting the scenery breathe from edge to edge." }],
+  "8ED": [{ year:"2003", title:"The modern card frame is born", desc:"Eighth Edition completely overhauls the classic card border — the old-school frame gets replaced with the sleeker, modern layout that (with tweaks) is still used on every Magic card today." }],
+  "INV": [{ year:"2000", title:"The first split cards", desc:"Invasion introduces split cards — two entirely different spells printed side by side on one card, playable as either half. The very first \"two-in-one\" card gimmick in Magic's history." }],
+  "CHK": [{ year:"2004", title:"The first flip cards", desc:"Champions of Kamigawa introduces flip cards — cards that transform into a different card by literally turning 180 degrees, years before double-faced cards existed." }],
+  "LRW": [{ year:"2007", title:"Planeswalkers arrive as a brand-new card type", desc:"Lorwyn introduces Planeswalkers — an entirely new card type with its own loyalty mechanic, later becoming one of the most iconic parts of Magic's identity." }],
+  "ISD": [{ year:"2011", title:"The first double-faced cards", desc:"Innistrad introduces double-faced cards (DFCs) — cards with a completely different card printed on the back, flipped over when they transform. A defining mechanic for the whole Innistrad plane." }],
+  "BFZ": [{ year:"2015", title:"The birth of Expeditions / the Masterpiece Series", desc:"Battle for Zendikar introduces Zendikar Expeditions — ultra-premium alternate-art foil lands inserted as a new rarity above mythic. The concept gets officially named \"Masterpiece Series\" a year later in Kaladesh." }],
+  "KLD": [{ year:"2016", title:"The Masterpiece Series gets its official name", desc:"Kaladesh officially names the super-premium insert cards \"Masterpiece Series\" (Kaladesh Inventions), formalizing the concept Battle for Zendikar's Expeditions had started a year earlier." }],
+  "EMN": [{ year:"2016", title:"The first meld cards", desc:"Eldritch Moon introduces meld cards — two separate double-faced cards that physically combine into one oversized card when a specific condition is met, forming creatures like Brisela, Voice of Nightmares." }],
+  "DOM": [{ year:"2018", title:"Sagas: a new enchantment subtype", desc:"Dominaria introduces Saga enchantments — cards that tell a story across chapters, adding a permanent counter and triggered ability each turn. A whole new way to build a card." }],
+  "ICE": [{ year:"1995", title:"The black border standard", desc:"Ice Age becomes the first standalone expansion set to be printed permanently with black borders. It establishes the rule that new expansions will feature black borders, while white borders are strictly reserved for core set reprints." }],
+  "4ED": [{ year:"1995", title:"The birth of Standard (Type II)", desc:"Conceived alongside Fourth Edition, Wizards of the Coast officially splits Magic into two distinct formats: Type I (allowing all cards ever printed) and Type II (allowing only cards from the most recent core set and expansions). Type II is later renamed \"Standard\" and becomes the competitive backbone of the game." }],
+  "CMD": [{ year:"2011", title:"The Commander revolution", desc:"Wizards of the Coast officially adopts the fan-made EDH format by releasing the first-ever preconstructed Commander decks. This marks the transition of multiplayer Magic from a casual kitchen-table format to the game's most popular and commercially dominant way to play." }],
+  "M15": [{ year:"2014", title:"The holofoil stamp security", desc:"Magic 2015 introduces a comprehensive redesign of the modern frame. It debuts the tiny, oval anti-counterfeit silver holofoil stamp at the bottom of rare and mythic cards, while blacking out the bottom border to clearly display collector numbers, rarity codes, and artist credits." }],
+  "GRN": [{ year:"2018", title:"The digital modernization (MTG Arena)", desc:"Coinciding with the release of Guilds of Ravnica, Magic: The Gathering Arena enters open beta. This modern digital platform replaces the archaic MTGO, attracts millions of new digital-first players, and fundamentally accelerates how tournament decks are tested and discovered worldwide." }]
+};
+
+const GROUPS = {
+  "ICE": "Ice Age Block",
+  "ALL": "Ice Age Block",
+  "CSP": "Ice Age Block",
+  "MIR": "Mirage Block",
+  "VIS": "Mirage Block",
+  "WTH": "Mirage Block",
+  "TMP": "Tempest Block",
+  "STH": "Tempest Block",
+  "EXO": "Tempest Block",
+  "USG": "Urza's Block",
+  "ULG": "Urza's Block",
+  "UDS": "Urza's Block",
+  "MMQ": "Masques Block",
+  "NEM": "Masques Block",
+  "PCY": "Masques Block",
+  "INV": "Invasion Block",
+  "PLS": "Invasion Block",
+  "APC": "Invasion Block",
+  "ODY": "Odyssey Block",
+  "TOR": "Odyssey Block",
+  "JUD": "Odyssey Block",
+  "ONS": "Onslaught Block",
+  "LGN": "Onslaught Block",
+  "SCG": "Onslaught Block",
+  "MRD": "Mirrodin Block",
+  "DST": "Mirrodin Block",
+  "5DN": "Mirrodin Block",
+  "CHK": "Kamigawa Block",
+  "BOK": "Kamigawa Block",
+  "SOK": "Kamigawa Block",
+  "RAV": "Ravnica Block",
+  "GPT": "Ravnica Block",
+  "DIS": "Ravnica Block",
+  "TSP": "Time Spiral Block",
+  "PLC": "Time Spiral Block",
+  "FUT": "Time Spiral Block",
+  "LRW": "Lorwyn Block",
+  "MOR": "Lorwyn Block",
+  "SHM": "Shadowmoor Block",
+  "EVE": "Shadowmoor Block",
+  "ALA": "Alara Block",
+  "CON": "Alara Block",
+  "ARB": "Alara Block",
+  "ZEN": "Zendikar Block",
+  "WWK": "Zendikar Block",
+  "ROE": "Zendikar Block",
+  "SOM": "Scars of Mirrodin Block",
+  "MBS": "Scars of Mirrodin Block",
+  "NPH": "Scars of Mirrodin Block",
+  "ISD": "Innistrad Block",
+  "DKA": "Innistrad Block",
+  "AVR": "Innistrad Block",
+  "RTR": "Return to Ravnica Block",
+  "GTC": "Return to Ravnica Block",
+  "DGM": "Return to Ravnica Block",
+  "THS": "Theros Block",
+  "BNG": "Theros Block",
+  "JOU": "Theros Block",
+  "KTK": "Khans of Tarkir Block",
+  "FRF": "Khans of Tarkir Block",
+  "DTK": "Khans of Tarkir Block",
+  "BFZ": "Battle for Zendikar Block",
+  "OGW": "Battle for Zendikar Block",
+  "SOI": "Shadows over Innistrad Block",
+  "EMN": "Shadows over Innistrad Block",
+  "KLD": "Kaladesh Block",
+  "AER": "Kaladesh Block",
+  "AKH": "Amonkhet Block",
+  "HOU": "Amonkhet Block",
+  "XLN": "Ixalan Block",
+  "RIX": "Ixalan Block",
+  "MMA": "Masters Series",
+  "MM2": "Masters Series",
+  "EMA": "Masters Series",
+  "MM3": "Masters Series",
+  "IMA": "Masters Series",
+  "A25": "Masters Series",
+  "UMA": "Masters Series",
+  "2XM": "Masters Series",
+  "2X2": "Masters Series",
+  "CMM": "Masters Series",
+  "UGL": "Un-sets",
+  "UNH": "Un-sets",
+  "UST": "Un-sets",
+  "UNF": "Un-sets",
+  "CNS": "Conspiracy",
+  "CN2": "Conspiracy",
+  "CMR": "Commander (drafted sets)",
+  "CLB": "Commander (drafted sets)",
+  "POR": "Portal",
+  "P02": "Portal",
+  "PTK": "Portal",
+  "DOM": "Three-and-One Model Era",
+  "GRN": "Three-and-One Model Era",
+  "RNA": "Three-and-One Model Era",
+  "WAR": "Three-and-One Model Era",
+  "ELD": "Three-and-One Model Era",
+  "THB": "Three-and-One Model Era",
+  "IKO": "Three-and-One Model Era",
+  "ZNR": "Three-and-One Model Era",
+  "KHM": "Three-and-One Model Era",
+  "STX": "Three-and-One Model Era",
+  "AFR": "Four-set Model Era",
+  "MID": "Four-set Model Era",
+  "VOW": "Four-set Model Era",
+  "NEO": "Four-set Model Era",
+  "SNC": "Four-set Model Era",
+  "DMU": "Four-set Model Era",
+  "BRO": "Four-set Model Era",
+  "ONE": "Four-set Model Era",
+  "MOM": "Four-set Model Era",
+  "MAT": "Four-set Model Era",
+  "WOE": "Four-set Model Era",
+  "LCI": "Four-set Model Era",
+  "MKM": "Four-set Model Era",
+  "OTJ": "Four-set Model Era",
+  "BLB": "Four-set Model Era",
+  "DSK": "Four-set Model Era",
+  "DFT": "Six-set Model Era",
+  "TDM": "Six-set Model Era",
+  "FIN": "Universes Beyond",
+  "EOE": "Six-set Model Era",
+  "SPM": "Universes Beyond",
+  "TLA": "Universes Beyond",
+  "ECL": "Six-set Model Era",
+  "TMT": "Universes Beyond",
+  "SOS": "Six-set Model Era",
+  "MSH": "Universes Beyond",
+  "HOB": "Universes Beyond",
+  "FRA": "Six-set Model Era",
+  "TRK": "Universes Beyond",
+  "BBD": "Other Sets",
+  "MH1": "Modern-legal Sets",
+  "MH2": "Modern-legal Sets",
+  "LTR": "Universes Beyond",
+  "ACR": "Universes Beyond",
+  "MH3": "Modern-legal Sets",
+  "CHR": "Compilations & Reprints",
+  "DPA": "Compilations & Reprints",
+  "MB1": "Compilations & Reprints",
+  "TSR": "Compilations & Reprints",
+  "DMR": "Compilations & Reprints",
+  "RVR": "Compilations & Reprints",
+  "INR": "Compilations & Reprints",
+  "MB2": "Compilations & Reprints",
+  "JMP": "Jumpstart",
+  "J22": "Jumpstart",
+  "J25": "Jumpstart",
+  "S99": "Starter Sets",
+  "S00": "Starter Sets",
+  "LEA": "Core Sets",
+  "LEB": "Core Sets",
+  "2ED": "Core Sets",
+  "3ED": "Core Sets",
+  "4ED": "Core Sets",
+  "5ED": "Core Sets",
+  "6ED": "Core Sets",
+  "7ED": "Core Sets",
+  "8ED": "Core Sets",
+  "9ED": "Core Sets",
+  "10E": "Core Sets",
+  "M10": "Core Sets",
+  "M11": "Core Sets",
+  "M12": "Core Sets",
+  "M13": "Core Sets",
+  "M14": "Core Sets",
+  "M15": "Core Sets",
+  "ORI": "Core Sets",
+  "M19": "Core Sets",
+  "M20": "Core Sets",
+  "M21": "Core Sets",
+  "FDN": "Core Sets",
+  "ARN": "Pre-block Sets",
+  "ATQ": "Pre-block Sets",
+  "LEG": "Pre-block Sets",
+  "DRK": "Pre-block Sets",
+  "FEM": "Pre-block Sets",
+  "HML": "Pre-block Sets",
+  "DBL": "Compilations & Reprints",
+  "MBC": "Compilations & Reprints",
+  "30A": "Compilations & Reprints",
+  "SUM": "Core Sets",
+  "PIP": "Universes Beyond",
+  "WHO": "Universes Beyond",
+  "CLU": "Universes Beyond",
+  "TLE": "Jumpstart",
+  "SLZ": "Secret Lair"
+};
+
+let ALL = [];
+function rebuildAll(){
+  ALL = [];
+  DATA.forEach(([setName, items])=>{
+    const code = codeOf(setName);
+    items.forEach((name, ii)=>{
+      ALL.push({ id: 'p_'+code+'_'+ii, set: setName, name });
+    });
+  });
+}
+function codeOf(setName){
+  const m = setName.match(/^(.*)\s\(([^)]+)\)$/);
+  return m ? m[2] : setName;
+}
+function titleOf(setName){
+  const m = setName.match(/^(.*)\s\(([^)]+)\)$/);
+  return m ? m[1] : setName;
+}
+
+const BUILTIN_COUNT = DATA.length;
+
+const STORE_KEY = 'mtg_pack_tracker_v1';
+const RELEASE_KEY = 'mtg_pack_tracker_releases_v1';
+const CUSTOM_SETS_KEY = 'mtg_pack_tracker_custom_sets_v1';
+const MIGRATED_KEY = 'mtg_pack_tracker_migrated_to_code_ids_v1';
+const CURRENCY_KEY = 'mtg_pack_tracker_currency_v1';
+const ONBOARDING_KEY = 'mtg_pack_tracker_onboarding_dismissed_v1';
+let store = {};
+try{ store = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }catch(e){ store = {}; }
+let releaseStore = {};
+try{ releaseStore = JSON.parse(localStorage.getItem(RELEASE_KEY) || '{}'); }catch(e){ releaseStore = {}; }
+let customSets = [];
+try{ customSets = JSON.parse(localStorage.getItem(CUSTOM_SETS_KEY) || '[]'); }catch(e){ customSets = []; }
+let currencySymbol = '€';
+try{ currencySymbol = localStorage.getItem(CURRENCY_KEY) || '€'; }catch(e){ currencySymbol = '€'; }
+
+function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){} }
+function saveReleaseStore(){ try{ localStorage.setItem(RELEASE_KEY, JSON.stringify(releaseStore)); }catch(e){} }
+function saveCurrency(){ try{ localStorage.setItem(CURRENCY_KEY, currencySymbol); }catch(e){} }
+function saveCustomSets(){ try{ localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets)); }catch(e){} }
+
+// One-time migration: old ids/keys were based on array position ('p_<index>_<item>',
+// releaseStore['<index>']). We now key everything by the set's stable code instead,
+// so deleting a custom set later can never shift another set's saved data.
+(function migrateToCodeBasedIds(){
+  if(localStorage.getItem(MIGRATED_KEY)) return;
+  const oldSiToCode = {};
+  DATA.forEach((entry, si)=>{ oldSiToCode[si] = codeOf(entry[0]); });
+
+  const newStore = {};
+  Object.keys(store).forEach(key=>{
+    const m = key.match(/^p_(\d+)_(\d+)$/);
+    if(m){
+      const si = m[1], ii = m[2];
+      const code = oldSiToCode[si];
+      if(code){ newStore['p_'+code+'_'+ii] = store[key]; return; }
+    }
+    newStore[key] = store[key];
+  });
+  store = newStore;
+
+  const newRelease = {};
+  Object.keys(releaseStore).forEach(key=>{
+    if(/^\d+$/.test(key)){
+      const code = oldSiToCode[key];
+      if(code){ newRelease[code] = releaseStore[key]; return; }
+    }
+    newRelease[key] = releaseStore[key];
+  });
+  releaseStore = newRelease;
+
+  saveStore();
+  saveReleaseStore();
+  localStorage.setItem(MIGRATED_KEY, '1');
+})();
+
+// One-time fix-up: removing "Jumpstart 2022 2 Booster Pack" (old index 0) from J22
+// shifts "Jumpstart 2022 Booster Pack" from index 1 to index 0. Carry over any saved
+// data for the remaining item so it isn't lost, and drop the now-removed item's data.
+const J22_FIX_KEY = 'mtg_pack_tracker_j22_reindex_fix_v1';
+(function fixJ22Reindex(){
+  if(localStorage.getItem(J22_FIX_KEY)) return;
+  // store['p_J22_0'] currently (if present) holds data for the removed 2-pack item,
+  // which no longer applies to anything. store['p_J22_1'] holds data for the item
+  // that survives and is now at index 0, so it takes over that slot.
+  const survivingEntry = store['p_J22_1'];
+  if(survivingEntry){ store['p_J22_0'] = survivingEntry; }
+  else{ delete store['p_J22_0']; }
+  delete store['p_J22_1'];
+  saveStore();
+  localStorage.setItem(J22_FIX_KEY, '1');
+})();
+
+// One-time fix-up: removing "Battlebond Blister Pack" (old index 0) from BBD
+// shifts "Battlebond Booster Pack" from index 1 to index 0. Carry over any saved
+// data for the remaining item so it isn't lost, and drop the now-removed item's data.
+const BBD_FIX_KEY = 'mtg_pack_tracker_bbd_reindex_fix_v1';
+(function fixBBDReindex(){
+  if(localStorage.getItem(BBD_FIX_KEY)) return;
+  const survivingEntry = store['p_BBD_1'];
+  if(survivingEntry){ store['p_BBD_0'] = survivingEntry; }
+  else{ delete store['p_BBD_0']; }
+  delete store['p_BBD_1'];
+  saveStore();
+  localStorage.setItem(BBD_FIX_KEY, '1');
+})();
+
+// One-time fix-up: removing "Mystery Booster Booster Pack (Convention Edition - 2021)"
+// (old index 0) from MB1 shifts "Convention Edition" from index 1 to 0 and "Retail
+// Edition" from index 2 to 1. Carry over saved data for both surviving items.
+const MB1_FIX_KEY = 'mtg_pack_tracker_mb1_reindex_fix_v1';
+(function fixMB1Reindex(){
+  if(localStorage.getItem(MB1_FIX_KEY)) return;
+  const conventionEntry = store['p_MB1_1'];
+  const retailEntry = store['p_MB1_2'];
+  if(conventionEntry){ store['p_MB1_0'] = conventionEntry; } else { delete store['p_MB1_0']; }
+  if(retailEntry){ store['p_MB1_1'] = retailEntry; } else { delete store['p_MB1_1']; }
+  delete store['p_MB1_2'];
+  saveStore();
+  localStorage.setItem(MB1_FIX_KEY, '1');
+})();
+
+// Load any custom sets the user has added, appending them after the built-in ones.
+function rebuildDataFromCustomSets(){
+  DATA.length = BUILTIN_COUNT;
+  customSets.forEach(cs=>{
+    DATA.push([cs.header, cs.items]);
+    if(cs.milestone){ MILESTONES[cs.code] = [cs.milestone]; }
+    if(cs.group){ GROUPS[cs.code] = cs.group; } else { delete GROUPS[cs.code]; }
+  });
+}
+rebuildDataFromCustomSets();
+rebuildAll();
+
+
+function isZeroMarket(marketVal){
+  if(marketVal === '' || marketVal === undefined || marketVal === null) return false;
+  return parseFloat(marketVal) === 0;
+}
+function getEntry(id){ return store[id] || { owned:false, price:'', date:'', market:'', considering:false, watchUrl:'' }; }
+function setEntry(id, patch){
+  store[id] = Object.assign(getEntry(id), patch);
+  saveStore();
+  updateStats();
+}
+
+function ageText(dateStr){
+  if(!dateStr) return '';
+  const rel = new Date(dateStr + 'T00:00:00');
+  if(isNaN(rel.getTime())) return '';
+  const now = new Date();
+  let months = (now.getFullYear() - rel.getFullYear())*12 + (now.getMonth() - rel.getMonth());
+  if(now.getDate() < rel.getDate()) months--;
+  if(months < 0) return "· not out yet";
+  if(months < 12){
+    if(months === 0) return "· dropped this month";
+    const n = months;
+    return `· ${n} month${n===1?'':'s'} old`;
+  }
+  const years = Math.floor(months/12);
+  return `· ${years} year${years===1?'':'s'} old`;
+}
+
+// Chronological item numbering: oldest booster pack = #1, newest = the highest number.
+// Only items whose SET has a release date filled in can be placed on this timeline.
+// Items within the same set keep their established display order (Draft/Set/Play,
+// then Jumpstart, then Collector, ...); sets that happen to share an exact release
+// date fall back to their position in DATA, just to keep the order stable/deterministic.
+function computeItemSequenceNumbers(){
+  const entries = [];
+  DATA.forEach(([setName, items], si)=>{
+    const code = codeOf(setName);
+    const rel = releaseStore[code];
+    if(!rel) return;
+    items.forEach((name, ii)=>{
+      entries.push({ id: 'p_'+code+'_'+ii, rel, si, ii });
+    });
+  });
+  entries.sort((a,b)=>{
+    if(a.rel !== b.rel) return a.rel < b.rel ? -1 : 1;
+    if(a.si !== b.si) return a.si - b.si;
+    return a.ii - b.ii;
+  });
+  const seq = {};
+  entries.forEach((e, idx)=>{ seq[e.id] = idx + 1; });
+  return seq;
+}
+
+function refreshSequenceBadges(){
+  const seq = computeItemSequenceNumbers();
+  document.querySelectorAll('.item-row').forEach(row=>{
+    const badge = row.querySelector('[data-role=seq]');
+    if(!badge) return;
+    const n = seq[row.dataset.id];
+    badge.textContent = n ? ('#'+n) : '';
+    badge.classList.toggle('hidden', !n);
+  });
+}
+
+const app = document.getElementById('app');
+
+function openMilestoneModal(milestones){
+  const body = document.getElementById('modalBody');
+  body.innerHTML = milestones.map((m, i)=>{
+    const divider = (i < milestones.length - 1)
+      ? 'margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--border);'
+      : '';
+    return `
+      <div class="modal-year">${escapeHtml(m.year)}</div>
+      <div class="modal-title">${escapeHtml(m.title)}</div>
+      <div class="modal-desc" style="${divider}">${escapeHtml(m.desc)}</div>
+    `;
+  }).join('');
+  document.getElementById('milestoneModal').classList.remove('hidden');
+}
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function closeMilestoneModal(){
+  document.getElementById('milestoneModal').classList.add('hidden');
+}
+document.getElementById('modalClose').addEventListener('click', closeMilestoneModal);
+document.getElementById('milestoneModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'milestoneModal') closeMilestoneModal();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape'){ closeMilestoneModal(); closeYearModal(); closeAddSetModal(); closeSettingsModal(); closeOnboarding(); }
+});
+
+function eur(n){
+  return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ' + currencySymbol;
+}
+
+function openYearModal(){
+  const counts = {}; // year -> {total, owned, spent, missingPriced, missingSum, missingNoPrice, missingZero}
+  const missingSets = [];
+  let totalTracked = 0;
+
+  DATA.forEach(([setName, items], si)=>{
+    const code = codeOf(setName);
+    const rel = releaseStore[code];
+    let ownedInSet = 0;
+    const perItem = items.map((name, ii)=> getEntry('p_'+code+'_'+ii));
+    perItem.forEach(e=>{ if(e.owned) ownedInSet++; });
+    if(rel){
+      const year = rel.slice(0,4);
+      if(!counts[year]) counts[year] = { total:0, owned:0, spent:0, missingPriced:0, missingSum:0, missingNoPrice:0, missingZero:0 };
+      const c = counts[year];
+      c.total += items.length;
+      c.owned += ownedInSet;
+      perItem.forEach(e=>{
+        if(e.owned){
+          c.spent += parseFloat(e.price) || 0;
+        } else {
+          const hasMarket = e.market !== '' && e.market !== undefined && e.market !== null;
+          if(hasMarket){
+            const mv = parseFloat(e.market);
+            if(!isNaN(mv)){
+              if(mv === 0){ c.missingZero++; }
+              else { c.missingPriced++; c.missingSum += mv; }
+            } else { c.missingNoPrice++; }
+          } else { c.missingNoPrice++; }
+        }
+      });
+      totalTracked += items.length;
+    } else {
+      missingSets.push({ si, code, title: titleOf(setName) });
+    }
+  });
+
+  const years = Object.keys(counts).sort();
+  const maxTotal = Math.max(1, ...years.map(y=>counts[y].total));
+  const body = document.getElementById('yearStatsBody');
+  const barTooltips = {}; // year -> { owned: text, missing: text }
+
+  let html = `<div class="year-modal-summary">
+    <div class="year-stat-chip">Years covered<b>${years.length}</b></div>
+    <div class="year-stat-chip">Packs tracked<b>${totalTracked}</b></div>
+    <div class="year-stat-chip">Sets missing a date<b>${missingSets.length}</b></div>
+  </div>`;
+
+  if(years.length === 0){
+    html += '<div class="year-empty-note">No sets have a release date set yet. Fill in the release date field on a set to see it show up here.</div>';
+  } else {
+    html += `<div class="year-legend">
+      <span><i style="background:var(--green);"></i>Owned</span>
+      <span><i style="background:var(--accent2); opacity:.35;"></i>Total tracked that year</span>
+      <span><i style="background:var(--accent);"></i>Year fully collected</span>
+    </div>
+    <div class="year-empty-note" style="margin-bottom:12px;">Hover the green part of a bar for money already spent that year, or the rest of the bar for what's left to buy (based on the market prices you've filled in).</div>`;
+    html += years.map(y=>{
+      const { total, owned, spent, missingPriced, missingSum, missingNoPrice, missingZero } = counts[y];
+      const totalPct = Math.round((total/maxTotal)*100);
+      const ownedPct = Math.round((owned/maxTotal)*100);
+      const missingPct = Math.max(0, totalPct - ownedPct);
+      const isComplete = total > 0 && owned === total;
+      const missingCount = total - owned;
+
+      const ownedTitle = owned > 0
+        ? `Owned in ${y}: ${owned} pack${owned===1?'':'s'}\nSpent so far: ${eur(spent)}`
+        : `No packs owned yet in ${y}`;
+
+      let missingTitleLines = [];
+      if(missingCount > 0){
+        missingTitleLines.push(`Still missing in ${y}: ${missingCount} pack${missingCount===1?'':'s'}`);
+        if(missingPriced > 0){
+          missingTitleLines.push(`~${eur(missingSum)} to complete (from ${missingPriced} priced pack${missingPriced===1?'':'s'})`);
+        } else {
+          missingTitleLines.push(`No market prices filled in yet for these`);
+        }
+        if(missingZero > 0){
+          missingTitleLines.push(`${missingZero} pack${missingZero===1?'':'s'} currently not buyable anywhere (market price = 0)`);
+        }
+        if(missingNoPrice > 0){
+          missingTitleLines.push(`${missingNoPrice} pack${missingNoPrice===1?'':'s'} without a market price set yet`);
+        }
+      }
+      const missingTitle = missingTitleLines.join('\n');
+      barTooltips[y] = { owned: ownedTitle, missing: missingTitle };
+
+      return `<div class="year-row${isComplete ? ' complete' : ''}">
+        <span class="year-label">${y}</span>
+        <span class="year-bar-track">
+          <span class="year-bar-total" style="width:${totalPct}%"></span>
+          <span class="year-bar-owned" style="width:${ownedPct}%" data-year="${y}" data-kind="owned"></span>
+          ${missingCount > 0 ? `<span class="year-bar-missing" style="left:${ownedPct}%; width:${missingPct}%" data-year="${y}" data-kind="missing"></span>` : ''}
+        </span>
+        <span class="year-count">${owned}/${total}</span>
+      </div>`;
+    }).join('');
+  }
+
+  if(missingSets.length){
+    html += `<div class="missing-sets-wrap">
+      <div class="missing-sets-title">${missingSets.length} set${missingSets.length===1?'':'s'} without a release date aren't counted above — click one to jump to it and fill it in:</div>
+      <div>${missingSets.map(s=>
+        `<span class="missing-set-pill" data-jump-code="${s.code}">${escapeHtml(s.title)} <span class="pill-code">${escapeHtml(s.code)}</span></span>`
+      ).join('')}</div>
+    </div>`;
+  }
+
+  body.innerHTML = html;
+  body.querySelectorAll('[data-jump-code]').forEach(pill=>{
+    pill.addEventListener('click', ()=> jumpToSet(pill.dataset.jumpCode));
+  });
+
+  body.querySelectorAll('.year-bar-owned, .year-bar-missing').forEach(bar=>{
+    const tip = barTooltips[bar.dataset.year];
+    const text = tip && tip[bar.dataset.kind];
+    if(!text) return;
+    bar.addEventListener('mouseenter', (e)=> showChartTooltip(e, text));
+    bar.addEventListener('mousemove', positionChartTooltip);
+    bar.addEventListener('mouseleave', hideChartTooltip);
+  });
+
+  document.getElementById('yearModal').classList.remove('hidden');
+}
+
+const chartTooltip = document.getElementById('chartTooltip');
+function showChartTooltip(e, text){
+  chartTooltip.textContent = text;
+  chartTooltip.style.display = 'block';
+  positionChartTooltip(e);
+}
+function positionChartTooltip(e){
+  const pad = 16;
+  chartTooltip.style.left = (e.clientX + pad) + 'px';
+  chartTooltip.style.top = (e.clientY + pad) + 'px';
+  requestAnimationFrame(()=>{
+    const rect = chartTooltip.getBoundingClientRect();
+    let left = e.clientX + pad, top = e.clientY + pad;
+    if(rect.right > window.innerWidth - 8) left = e.clientX - rect.width - pad;
+    if(rect.bottom > window.innerHeight - 8) top = e.clientY - rect.height - pad;
+    chartTooltip.style.left = left + 'px';
+    chartTooltip.style.top = top + 'px';
+  });
+}
+function hideChartTooltip(){ chartTooltip.style.display = 'none'; }
+function jumpToSet(code){
+  closeYearModal();
+  const el = document.getElementById('setgroup-'+code);
+  if(!el) return;
+  el.classList.remove('collapsed');
+  setTimeout(()=>{
+    if(el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'center' });
+    el.classList.add('flash-highlight');
+    setTimeout(()=> el.classList.remove('flash-highlight'), 1500);
+  }, 50);
+}
+function closeYearModal(){
+  document.getElementById('yearModal').classList.add('hidden');
+  hideChartTooltip();
+}
+document.getElementById('yearStatsBtn').addEventListener('click', openYearModal);
+document.getElementById('yearModalClose').addEventListener('click', closeYearModal);
+document.getElementById('yearModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'yearModal') closeYearModal();
+});
+
+// ============ Add / delete custom sets ============
+let packRowCounter = 0;
+
+function addPackRow(value){
+  const list = document.getElementById('newSetPacksList');
+  const rid = 'pr'+(packRowCounter++);
+  const row = document.createElement('div');
+  row.className = 'pack-row';
+  row.dataset.rowId = rid;
+  row.innerHTML = `
+    <input type="text" class="form-input pack-name-input" list="packTypeSuggestions" placeholder="e.g. Draft Booster Pack" value="${value ? escapeHtml(value) : ''}">
+    <button type="button" class="remove-pack-row" title="Remove this pack">&times;</button>
+  `;
+  row.querySelector('.remove-pack-row').addEventListener('click', ()=>{
+    row.remove();
+    updateRemovePackButtons();
+  });
+  list.appendChild(row);
+  updateRemovePackButtons();
+}
+function updateRemovePackButtons(){
+  const rows = document.querySelectorAll('#newSetPacksList .pack-row');
+  rows.forEach(r=>{
+    r.querySelector('.remove-pack-row').disabled = (rows.length <= 1);
+  });
+}
+
+function populateGroupSuggestions(){
+  const dl = document.getElementById('groupSuggestions');
+  const names = [...new Set(Object.values(GROUPS))].sort((a,b)=> a.localeCompare(b));
+  dl.innerHTML = names.map(n=> `<option value="${escapeHtml(n)}">`).join('');
+}
+
+function resetAddSetForm(){
+  document.getElementById('newSetName').value = '';
+  document.getElementById('newSetCode').value = '';
+  document.getElementById('newSetGroup').value = '';
+  populateGroupSuggestions();
+  document.getElementById('newSetCodeError').classList.add('hidden');
+  document.getElementById('newSetFormError').classList.add('hidden');
+  document.getElementById('newSetMilestoneToggle').checked = false;
+  document.getElementById('newSetMilestoneFields').classList.add('hidden');
+  document.getElementById('newSetMYear').value = '';
+  document.getElementById('newSetMTitle').value = '';
+  document.getElementById('newSetMDesc').value = '';
+  document.getElementById('newSetPacksList').innerHTML = '';
+  addPackRow('Draft Booster Pack');
+  addPackRow('Collector Booster Pack');
+}
+
+function allKnownCodes(){
+  return new Set(DATA.map(([setName])=>codeOf(setName).toUpperCase()));
+}
+
+function openAddSetModal(){
+  resetAddSetForm();
+  document.getElementById('addSetModal').classList.remove('hidden');
+  document.getElementById('newSetName').focus();
+}
+function closeAddSetModal(){
+  document.getElementById('addSetModal').classList.add('hidden');
+}
+
+document.getElementById('addSetBtn').addEventListener('click', openAddSetModal);
+document.getElementById('addSetModalClose').addEventListener('click', closeAddSetModal);
+document.getElementById('cancelAddSetBtn').addEventListener('click', closeAddSetModal);
+document.getElementById('addSetModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'addSetModal') closeAddSetModal();
+});
+document.getElementById('addPackRowBtn').addEventListener('click', ()=> addPackRow(''));
+
+// ---- Settings (currency) ----
+function syncCurrencySelect(){
+  const sel = document.getElementById('currencySel');
+  if(!sel) return;
+  const hasOption = Array.from(sel.options).some(o=>o.value===currencySymbol);
+  sel.value = hasOption ? currencySymbol : '€';
+}
+function openSettingsModal(){
+  syncCurrencySelect();
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+function closeSettingsModal(){
+  document.getElementById('settingsModal').classList.add('hidden');
+}
+document.getElementById('settingsBtn').addEventListener('click', openSettingsModal);
+document.getElementById('settingsModalClose').addEventListener('click', closeSettingsModal);
+document.getElementById('settingsCloseBtn').addEventListener('click', closeSettingsModal);
+document.getElementById('settingsModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'settingsModal') closeSettingsModal();
+});
+document.getElementById('currencySel').addEventListener('change', (e)=>{
+  currencySymbol = e.target.value;
+  saveCurrency();
+  updateStats();
+});
+
+// ---- Onboarding guide ----
+function openOnboarding(){
+  document.getElementById('onboardingBanner').classList.remove('hidden');
+}
+function closeOnboarding(){
+  document.getElementById('onboardingBanner').classList.add('hidden');
+}
+function dismissOnboardingForGood(){
+  closeOnboarding();
+  try{ localStorage.setItem(ONBOARDING_KEY, '1'); }catch(e){}
+}
+document.getElementById('helpBtn').addEventListener('click', openOnboarding);
+document.getElementById('onboardingClose').addEventListener('click', closeOnboarding);
+document.getElementById('onboardingDismiss').addEventListener('click', dismissOnboardingForGood);
+let onboardingAlreadySeen = false;
+try{ onboardingAlreadySeen = !!localStorage.getItem(ONBOARDING_KEY); }catch(e){ onboardingAlreadySeen = false; }
+if(!onboardingAlreadySeen) openOnboarding();
+
+document.getElementById('newSetCode').addEventListener('input', (e)=>{
+  e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+});
+
+document.getElementById('newSetMilestoneToggle').addEventListener('change', (e)=>{
+  document.getElementById('newSetMilestoneFields').classList.toggle('hidden', !e.target.checked);
+});
+
+document.getElementById('saveAddSetBtn').addEventListener('click', ()=>{
+  const codeErrEl = document.getElementById('newSetCodeError');
+  const formErrEl = document.getElementById('newSetFormError');
+  codeErrEl.classList.add('hidden');
+  formErrEl.classList.add('hidden');
+
+  const name = document.getElementById('newSetName').value.trim();
+  const code = document.getElementById('newSetCode').value.trim();
+
+  if(!name){
+    formErrEl.textContent = 'Give the set a name.';
+    formErrEl.classList.remove('hidden');
+    document.getElementById('newSetName').focus();
+    return;
+  }
+  if(!code){
+    codeErrEl.textContent = 'A set code is required.';
+    codeErrEl.classList.remove('hidden');
+    document.getElementById('newSetCode').focus();
+    return;
+  }
+  if(allKnownCodes().has(code)){
+    codeErrEl.textContent = `"${code}" is already used by another set. Pick a different code.`;
+    codeErrEl.classList.remove('hidden');
+    document.getElementById('newSetCode').focus();
+    return;
+  }
+
+  const packInputs = Array.from(document.querySelectorAll('#newSetPacksList .pack-name-input'));
+  const packTypes = packInputs.map(i=>i.value.trim()).filter(v=>v.length>0);
+  if(packTypes.length === 0){
+    formErrEl.textContent = 'Add at least one booster pack.';
+    formErrEl.classList.remove('hidden');
+    return;
+  }
+  const items = packTypes.map(t=> (name+' '+t).trim());
+  // guard against accidental duplicate pack names within the same set
+  const uniqueItems = [...new Set(items)];
+
+  const wantsMilestone = document.getElementById('newSetMilestoneToggle').checked;
+  let milestone = null;
+  if(wantsMilestone){
+    const y = document.getElementById('newSetMYear').value.trim();
+    const t = document.getElementById('newSetMTitle').value.trim();
+    const d = document.getElementById('newSetMDesc').value.trim();
+    if(!y || !t || !d){
+      formErrEl.textContent = 'Fill in year, title and description for the milestone, or untick the milestone checkbox.';
+      formErrEl.classList.remove('hidden');
+      return;
+    }
+    milestone = { year:y, title:t, desc:d };
+  }
+
+  const groupName = document.getElementById('newSetGroup').value.trim();
+
+  const header = `${name} (${code})`;
+  const customEntry = { code, header, items: uniqueItems, milestone, group: groupName || null };
+  customSets.push(customEntry);
+  saveCustomSets();
+  rebuildDataFromCustomSets();
+  rebuildAll();
+  closeAddSetModal();
+  render();
+  jumpToSet(code);
+});
+
+function deleteCustomSet(code, title){
+  if(!confirm(`Delete "${title}"? This removes it and all its saved data (ownership, prices, dates) — this can't be undone.`)) return;
+
+  // wipe stored item data for this set
+  Object.keys(store).forEach(key=>{
+    if(key.startsWith('p_'+code+'_')) delete store[key];
+  });
+  delete releaseStore[code];
+  delete MILESTONES[code];
+  delete GROUPS[code];
+  customSets = customSets.filter(cs=>cs.code !== code);
+
+  saveStore();
+  saveReleaseStore();
+  saveCustomSets();
+  rebuildDataFromCustomSets();
+  rebuildAll();
+  render();
+}
+
+function render(){
+  app.innerHTML = '';
+  DATA.forEach(([setName, items], si)=>{
+    const group = document.createElement('div');
+    group.className = 'set-group';
+    group.dataset.set = setName.toLowerCase();
+    group.dataset.origIndex = si;
+    group.dataset.spent = '0';
+
+    const titleText = titleOf(setName);
+    const codeText = codeOf(setName);
+    group.id = 'setgroup-'+codeText;
+    group.dataset.release = releaseStore[codeText] || '';
+    const groupName = GROUPS[codeText] || '';
+    group.dataset.group = groupName;
+    const isCustom = customSets.some(cs=>cs.code===codeText);
+    if(isCustom) group.classList.add('custom-set');
+    const milestone = MILESTONES[codeText];
+    if(milestone) group.classList.add('milestone');
+
+    const header = document.createElement('div');
+    header.className = 'set-header';
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', 'true');
+    header.setAttribute('aria-label', 'Toggle '+titleText+' set');
+    header.innerHTML = `
+      <span class="set-header-check set-count" data-role="setcheck">0/${items.length}</span>
+      <div class="set-header-main">
+        <span class="set-title">${titleText}</span>
+        <span class="set-code">${codeText}</span>
+        ${groupName ? `<span class="group-tag">${groupName}</span>` : ''}
+        ${isCustom ? '<span class="custom-badge" title="You added this set yourself">custom</span>' : ''}
+        ${milestone ? `<span class="milestone-info-btn" data-role="milestone-btn" role="button" tabindex="0" aria-label="Why ${escapeHtml(titleText)} is special" title="Why this set is special">i</span>` : ''}
+        ${isCustom ? `<span class="delete-set-btn" data-role="delete-set-btn" role="button" tabindex="0" aria-label="Delete ${escapeHtml(titleText)}" title="Delete this custom set">🗑</span>` : ''}
+        <span class="set-age" data-role="age"></span>
+      </div>
+      <div class="date-wrap" data-role="release-wrap">
+        <input type="date" class="release-date" data-code="${codeText}" value="${releaseStore[codeText]||''}" aria-label="Release date for ${escapeHtml(titleText)}">
+        <span class="date-hint-overlay">Release date</span>
+      </div>
+      <span class="set-header-chev" aria-hidden="true"><span class="chev">▾</span></span>`;
+    if(milestone){
+      const milestoneBtn = header.querySelector('[data-role=milestone-btn]');
+      milestoneBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openMilestoneModal(milestone);
+      });
+      milestoneBtn.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); openMilestoneModal(milestone); }
+      });
+    }
+    if(isCustom){
+      const deleteBtn = header.querySelector('[data-role=delete-set-btn]');
+      deleteBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        deleteCustomSet(codeText, titleText);
+      });
+      deleteBtn.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); deleteCustomSet(codeText, titleText); }
+      });
+    }
+    header.addEventListener('click', (e)=>{
+      if(e.target.closest('.date-wrap')) return;
+      const collapsed = group.classList.toggle('collapsed');
+      header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    });
+    header.addEventListener('keydown', (e)=>{
+      if(e.target !== header) return; // let nested controls (date input, i, 🗑) handle their own keys
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        const collapsed = group.classList.toggle('collapsed');
+        header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      }
+    });
+
+    const itemsWrap = document.createElement('div');
+    itemsWrap.className = 'items';
+
+    items.forEach((name, ii)=>{
+      const id = 'p_'+codeText+'_'+ii;
+      const entry = getEntry(id);
+      const itemWrap = document.createElement('div');
+      itemWrap.className = 'item-wrap';
+      const row = document.createElement('div');
+      row.className = 'item-row' + (entry.owned ? ' owned':'') + (!entry.owned && isZeroMarket(entry.market) ? ' zero-market':'') + (entry.considering ? ' watching':'');
+      row.dataset.id = id;
+      row.dataset.name = name.toLowerCase();
+      row.dataset.market = entry.market || '';
+      row.innerHTML = `
+        <input type="checkbox" ${entry.owned ? 'checked':''} data-role="owned">
+        <span class="item-name ${entry.owned?'owned-text':''}">
+          <span class="item-seq hidden" data-role="seq"></span>
+          <span class="item-name-text">${name}</span>
+          <button type="button" class="item-watch-toggle${entry.considering?' active':''}" data-role="watch-toggle" title="Plan to buy this">${entry.considering?'★':'☆'}</button>
+        </span>
+        <input type="number" step="0.01" min="0" placeholder="Market price" value="${entry.market||''}" data-role="market" class="${entry.owned?'market-hidden':''}">
+        <input type="number" step="0.01" min="0" placeholder="Price paid" value="${entry.price||''}" data-role="price" ${entry.owned?'':'disabled'}>
+        <div class="date-wrap">
+          <input type="date" value="${entry.date||''}" data-role="date" ${entry.owned?'':'disabled'}>
+          <span class="date-hint-overlay">Date bought</span>
+        </div>
+      `;
+      const cb = row.querySelector('[data-role=owned]');
+      const marketInp = row.querySelector('[data-role=market]');
+      const priceInp = row.querySelector('[data-role=price]');
+      const dateInp = row.querySelector('[data-role=date]');
+      const dateHint = row.querySelector('.date-hint-overlay');
+      const nameSpan = row.querySelector('.item-name');
+      const watchToggle = row.querySelector('[data-role=watch-toggle]');
+
+      const watchPanel = document.createElement('div');
+      watchPanel.className = 'item-watch-panel' + (entry.considering ? '' : ' hidden');
+      watchPanel.dataset.id = id;
+      watchPanel.innerHTML = `
+        <span class="item-watch-label">To buy</span>
+        <input type="url" class="item-watch-url" data-role="watch-url" placeholder="Link to buy..." value="${escapeHtml(entry.watchUrl||'')}">
+        <button type="button" class="item-watch-visit" data-role="watch-visit" title="Open link"${entry.watchUrl?'':' disabled'}>↗</button>
+      `;
+      const watchUrlInp = watchPanel.querySelector('[data-role=watch-url]');
+      const watchVisitBtn = watchPanel.querySelector('[data-role=watch-visit]');
+
+      watchToggle.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const considering = !watchToggle.classList.contains('active');
+        watchToggle.classList.toggle('active', considering);
+        watchToggle.textContent = considering ? '★' : '☆';
+        row.classList.toggle('watching', considering);
+        watchPanel.classList.toggle('hidden', !considering);
+        setEntry(id, { considering });
+        if(considering) watchUrlInp.focus();
+      });
+      watchUrlInp.addEventListener('click', (e)=> e.stopPropagation());
+      watchUrlInp.addEventListener('input', ()=>{
+        setEntry(id, { watchUrl: watchUrlInp.value });
+        watchVisitBtn.disabled = !watchUrlInp.value.trim();
+      });
+      watchVisitBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const url = watchUrlInp.value.trim();
+        if(!url) return;
+        const href = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+        window.open(href, '_blank', 'noopener,noreferrer');
+      });
+
+      dateInp.disabled = !entry.owned;
+      setupDateHint(dateInp, dateHint);
+
+      marketInp.addEventListener('input', ()=>{
+        setEntry(id, { market: marketInp.value });
+        row.dataset.market = marketInp.value || '';
+        row.classList.toggle('zero-market', !cb.checked && isZeroMarket(marketInp.value));
+        applyFilters();
+        maybeResort();
+      });
+
+      cb.addEventListener('change', ()=>{
+        const owned = cb.checked;
+        row.classList.toggle('owned', owned);
+        nameSpan.classList.toggle('owned-text', owned);
+        priceInp.disabled = !owned;
+        dateInp.disabled = !owned;
+        marketInp.classList.toggle('market-hidden', owned);
+        row.classList.toggle('zero-market', !owned && isZeroMarket(marketInp.value));
+        setEntry(id, { owned });
+        updateSetCount(group, items.length);
+        updateGroupSpent(group);
+        maybeResort();
+      });
+      priceInp.addEventListener('input', ()=>{
+        setEntry(id, { price: priceInp.value });
+        updateGroupSpent(group);
+        maybeResort();
+      });
+      dateInp.addEventListener('input', ()=>{ setEntry(id, { date: dateInp.value }); });
+
+      itemWrap.appendChild(row);
+      itemWrap.appendChild(watchPanel);
+      itemsWrap.appendChild(itemWrap);
+    });
+
+    group.appendChild(header);
+    group.appendChild(itemsWrap);
+    app.appendChild(group);
+    updateSetCount(group, items.length);
+    updateGroupSpent(group);
+
+    const ageEl = header.querySelector('[data-role=age]');
+    ageEl.textContent = ageText(releaseStore[codeText]);
+
+    const releaseInp = header.querySelector('.release-date');
+    const releaseHint = header.querySelector('[data-role=release-wrap] .date-hint-overlay');
+    setupDateHint(releaseInp, releaseHint);
+    releaseInp.addEventListener('click', (e)=> e.stopPropagation());
+    releaseInp.addEventListener('input', ()=>{
+      releaseStore[codeText] = releaseInp.value;
+      saveReleaseStore();
+      group.dataset.release = releaseInp.value || '';
+      ageEl.textContent = ageText(releaseInp.value);
+      maybeResort();
+      refreshSequenceBadges();
+    });
+  });
+  updateStats();
+  sortGroups(document.getElementById('sortSel').value);
+  refreshSequenceBadges();
+}
+
+function setupDateHint(inputEl, hintEl){
+  function update(){ hintEl.style.display = inputEl.value ? 'none' : 'flex'; }
+  inputEl.addEventListener('focus', ()=>{ hintEl.style.display = 'none'; });
+  inputEl.addEventListener('blur', update);
+  inputEl.addEventListener('input', update);
+  update();
+}
+function updateSetCount(group, total){
+  const owned = group.querySelectorAll('input[data-role=owned]:checked').length;
+  const complete = owned === total;
+  group.classList.toggle('complete', complete);
+  group.querySelector('[data-role=setcheck]').textContent = owned + '/' + total;
+}
+
+function updateGroupSpent(group){
+  let sum = 0;
+  group.querySelectorAll('.item-row').forEach(row=>{
+    const cb = row.querySelector('[data-role=owned]');
+    const priceInp = row.querySelector('[data-role=price]');
+    if(cb.checked){ sum += parseFloat(priceInp.value) || 0; }
+  });
+  group.dataset.spent = sum;
+}
+
+function itemMarketValue(itemWrap){
+  const row = itemWrap.querySelector('.item-row') || itemWrap;
+  const v = row.dataset.market;
+  if(v === undefined || v === null || v === '') return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
+
+function sortItemsWithinGroup(group, mode){
+  const wrap = group.querySelector('.items');
+  if(!wrap) return;
+  const rows = Array.from(wrap.children);
+  rows.sort((a,b)=>{
+    const va = itemMarketValue(a), vb = itemMarketValue(b);
+    if(va===null && vb===null) return 0;
+    if(va===null) return 1;
+    if(vb===null) return -1;
+    return mode==='market-desc' ? (vb-va) : (va-vb);
+  });
+  rows.forEach(r=> wrap.appendChild(r));
+}
+
+function groupMarketExtreme(group, mode){
+  const wrap = group.querySelector('.items');
+  if(!wrap) return null;
+  let best = null;
+  Array.from(wrap.children).forEach(row=>{
+    const v = itemMarketValue(row);
+    if(v===null) return;
+    if(best===null) best = v;
+    else if(mode==='market-desc' && v>best) best = v;
+    else if(mode==='market-asc' && v<best) best = v;
+  });
+  return best;
+}
+
+function sortGroups(mode){
+  // clear any divider headers left over from a previous "group by block" pass
+  app.querySelectorAll('.group-divider').forEach(d=>d.remove());
+  const groups = Array.from(app.querySelectorAll(':scope > .set-group'));
+
+  if(mode === 'market-desc' || mode === 'market-asc'){
+    groups.forEach(g=> sortItemsWithinGroup(g, mode));
+    groups.sort((a,b)=>{
+      const va = groupMarketExtreme(a, mode), vb = groupMarketExtreme(b, mode);
+      if(va===null && vb===null) return parseInt(a.dataset.origIndex) - parseInt(b.dataset.origIndex);
+      if(va===null) return 1;
+      if(vb===null) return -1;
+      return mode==='market-desc' ? (vb-va) : (va-vb);
+    });
+  } else if(mode === 'price-desc'){
+    groups.sort((a,b)=> parseFloat(b.dataset.spent||0) - parseFloat(a.dataset.spent||0));
+  } else if(mode === 'price-asc'){
+    groups.sort((a,b)=> parseFloat(a.dataset.spent||0) - parseFloat(b.dataset.spent||0));
+  } else if(mode === 'release-desc'){
+    groups.sort((a,b)=>{
+      const ra = a.dataset.release, rb = b.dataset.release;
+      if(!ra && !rb) return 0;
+      if(!ra) return 1;
+      if(!rb) return -1;
+      return rb.localeCompare(ra);
+    });
+  } else if(mode === 'release-asc'){
+    groups.sort((a,b)=>{
+      const ra = a.dataset.release, rb = b.dataset.release;
+      if(!ra && !rb) return 0;
+      if(!ra) return 1;
+      if(!rb) return -1;
+      return ra.localeCompare(rb);
+    });
+  } else if(mode === 'group'){
+    // the earliest-appearing (lowest origIndex) set in a block decides where that
+    // whole block sits, keeping the app's existing newest-first convention
+    const groupMinIndex = {};
+    groups.forEach(g=>{
+      const b = g.dataset.group;
+      const idx = parseInt(g.dataset.origIndex);
+      if(b && (groupMinIndex[b] === undefined || idx < groupMinIndex[b])) groupMinIndex[b] = idx;
+    });
+    groups.sort((a,b)=>{
+      const ba = a.dataset.group, bb = b.dataset.group;
+      const oa = parseInt(a.dataset.origIndex), ob = parseInt(b.dataset.origIndex);
+      if(ba === bb) return oa - ob;
+      if(!ba && !bb) return oa - ob;
+      if(!ba) return 1;
+      if(!bb) return -1;
+      return groupMinIndex[ba] - groupMinIndex[bb];
+    });
+  } else {
+    groups.sort((a,b)=> parseInt(a.dataset.origIndex) - parseInt(b.dataset.origIndex));
+  }
+
+  if(mode === 'group'){
+    let lastGroup;
+    groups.forEach(g=>{
+      const b = g.dataset.group || '';
+      if(b !== lastGroup){
+        const divider = document.createElement('div');
+        divider.className = 'group-divider';
+        divider.textContent = b || 'Ungrouped';
+        app.appendChild(divider);
+        lastGroup = b;
+      }
+      app.appendChild(g);
+    });
+  } else {
+    groups.forEach(g=> app.appendChild(g));
+  }
+}
+
+function maybeResort(){
+  const mode = document.getElementById('sortSel').value;
+  if(mode !== 'default') sortGroups(mode);
+}
+
+document.getElementById('sortSel').addEventListener('change', (e)=> sortGroups(e.target.value));
+
+function updateStats(){
+  let owned = 0, spent = 0, completeSets = 0, value = 0;
+  DATA.forEach(([setName, items])=>{
+    const code = codeOf(setName);
+    let allOwned = true;
+    items.forEach((name, ii)=>{
+      const id = 'p_'+code+'_'+ii;
+      const e = getEntry(id);
+      if(e.owned){
+        owned++;
+        spent += parseFloat(e.price)||0;
+        value += parseFloat(e.market)||0;
+      } else { allOwned = false; }
+    });
+    if(allOwned) completeSets++;
+  });
+  document.getElementById('statOwned').textContent = owned;
+  document.getElementById('statTotal').textContent = ALL.length;
+  document.getElementById('statSpent').textContent = eur(spent);
+  const valueEl = document.getElementById('statValue');
+  valueEl.textContent = eur(value);
+  valueEl.classList.remove('stat-gain','stat-loss');
+  if(value > spent) valueEl.classList.add('stat-gain');
+  else if(value < spent) valueEl.classList.add('stat-loss');
+  document.getElementById('statSets').textContent = DATA.length;
+  document.getElementById('statComplete').textContent = completeSets;
+
+  const pct = ALL.length ? Math.round((owned/ALL.length)*100) : 0;
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+  fill.style.background = progressColor(pct);
+  document.getElementById('progressPct').textContent = pct + '%';
+}
+
+function progressColor(pct){
+  const stops = [
+    {p:0,   c:[226,85,90]},   // red
+    {p:50,  c:[226,176,85]},  // yellow/orange
+    {p:100, c:[76,175,109]}   // green
+  ];
+  let a = stops[0], b = stops[stops.length-1];
+  for(let i=0;i<stops.length-1;i++){
+    if(pct >= stops[i].p && pct <= stops[i+1].p){ a = stops[i]; b = stops[i+1]; break; }
+  }
+  const range = b.p - a.p || 1;
+  const t = (pct - a.p) / range;
+  const rgb = a.c.map((v,i)=> Math.round(v + (b.c[i]-v)*t));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+// ---- Search / filter ----
+const searchInp = document.getElementById('search');
+const filterSel = document.getElementById('filter');
+
+function applyFilters(){
+  const q = searchInp.value.trim().toLowerCase();
+  const mode = filterSel.value;
+  document.querySelectorAll('.set-group').forEach(group=>{
+    let anyVisible = false;
+    const setMatches = group.dataset.set.includes(q);
+    group.querySelectorAll('.item-row').forEach(row=>{
+      const id = row.dataset.id;
+      const entry = getEntry(id);
+      let show = true;
+      if(q && !setMatches && !row.dataset.name.includes(q)) show = false;
+      if(mode==='owned' && !entry.owned) show = false;
+      if(mode==='missing' && entry.owned) show = false;
+      if(mode==='has-market' && (entry.market===undefined || entry.market===null || entry.market==='')) show = false;
+      const wrapEl = row.closest('.item-wrap') || row;
+      wrapEl.classList.toggle('hidden', !show);
+      if(show) anyVisible = true;
+    });
+    group.classList.toggle('hidden', !anyVisible);
+    if(q && anyVisible) group.classList.remove('collapsed');
+  });
+  updateGroupDividerVisibility();
+}
+function updateGroupDividerVisibility(){
+  const children = Array.from(app.children);
+  let currentDivider = null;
+  let anyVisibleUnderCurrent = false;
+  children.forEach(el=>{
+    if(el.classList.contains('group-divider')){
+      if(currentDivider) currentDivider.classList.toggle('hidden', !anyVisibleUnderCurrent);
+      currentDivider = el;
+      anyVisibleUnderCurrent = false;
+    } else if(el.classList.contains('set-group')){
+      if(!el.classList.contains('hidden')) anyVisibleUnderCurrent = true;
+    }
+  });
+  if(currentDivider) currentDivider.classList.toggle('hidden', !anyVisibleUnderCurrent);
+}
+searchInp.addEventListener('input', applyFilters);
+filterSel.addEventListener('change', applyFilters);
+
+document.getElementById('expandAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.set-group').forEach(g=>g.classList.remove('collapsed'));
+});
+document.getElementById('collapseAll').addEventListener('click', ()=>{
+  document.querySelectorAll('.set-group').forEach(g=>g.classList.add('collapsed'));
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm("Really wipe all saved data (ownership, prices, dates)? A safety-net JSON backup will be downloaded automatically first, so you can restore it with \"Restore (JSON)\" if you change your mind. This can't be undone otherwise.")){
+    downloadBackupFile();
+    store = {};
+    releaseStore = {};
+    saveStore();
+    saveReleaseStore();
+    render();
+  }
+});
+
+// ---- JSON backup / restore (full-fidelity: store + release dates + custom sets + currency) ----
+function buildBackupObject(){
+  return {
+    schema: 'mtg-tracker-backup',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    currency: currencySymbol,
+    store,
+    releaseStore,
+    customSets
+  };
+}
+function downloadBackupFile(){
+  const json = JSON.stringify(buildBackupObject(), null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  a.href = url; a.download = 'mtg_backup_'+ts+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('backupBtn').addEventListener('click', downloadBackupFile);
+
+document.getElementById('restoreBtn').addEventListener('click', ()=>{
+  document.getElementById('restoreFile').click();
+});
+function isValidBackupObject(parsed){
+  return !!(parsed && typeof parsed === 'object' && ('store' in parsed));
+}
+function applyBackup(parsed){
+  store = (parsed.store && typeof parsed.store === 'object') ? parsed.store : {};
+  releaseStore = (parsed.releaseStore && typeof parsed.releaseStore === 'object') ? parsed.releaseStore : {};
+  customSets = Array.isArray(parsed.customSets) ? parsed.customSets : [];
+  if(parsed.currency){ currencySymbol = parsed.currency; saveCurrency(); syncCurrencySelect(); }
+  saveStore();
+  saveReleaseStore();
+  saveCustomSets();
+  rebuildDataFromCustomSets();
+  rebuildAll();
+  render();
+}
+document.getElementById('restoreFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    let parsed;
+    try{ parsed = JSON.parse(evt.target.result); }
+    catch(err){ alert("That file isn't valid JSON — couldn't read it."); e.target.value=''; return; }
+    if(!isValidBackupObject(parsed)){
+      alert("This doesn't look like a backup file made by this tool's \"Backup (JSON)\" button.");
+      e.target.value = '';
+      return;
+    }
+    if(!confirm("Restore this backup? It will replace everything currently saved here (ownership, prices, dates, plan-to-buy list, custom sets). This can't be undone.")){
+      e.target.value = '';
+      return;
+    }
+    applyBackup(parsed);
+    alert("Backup restored.");
+    e.target.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
+});
+
+// ---- CSV export ----
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  let rows = [['Set','Code','Set Release Date','Product','Owned','Market Price (EUR)','Price Paid (EUR)','Date Bought']];
+  DATA.forEach(([setName, items])=>{
+    const titleText = titleOf(setName);
+    const codeText = codeOf(setName);
+    const releaseDate = releaseStore[codeText] || '';
+    items.forEach((name, ii)=>{
+      const id = 'p_'+codeText+'_'+ii;
+      const e = getEntry(id);
+      rows.push([titleText, codeText, releaseDate, name, e.owned?'YES':'NO', e.market||'', e.price||'', e.date||'']);
+    });
+  });
+  const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'mtg_booster_packs.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ---- CSV import ----
+function parseCSVLine(line){
+  const out = [];
+  let cur = '', inQ = false;
+  for(let i=0;i<line.length;i++){
+    const c = line[i];
+    if(inQ){
+      if(c === '"'){
+        if(line[i+1] === '"'){ cur += '"'; i++; } else { inQ = false; }
+      } else { cur += c; }
+    } else {
+      if(c === '"'){ inQ = true; }
+      else if(c === ','){ out.push(cur); cur=''; }
+      else { cur += c; }
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+document.getElementById('importBtn').addEventListener('click', ()=>{
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    let text = evt.target.result;
+    if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+    if(lines.length < 2){ alert("That CSV looks empty or invalid."); return; }
+    const header = parseCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
+    const idxKod = header.indexOf('code');
+    const idxProdukt = header.indexOf('product');
+    const idxVlastnim = header.indexOf('owned');
+    const idxMarket = header.indexOf('market price (eur)');
+    const idxCena = (header.indexOf('price paid (eur)') !== -1) ? header.indexOf('price paid (eur)') : header.indexOf('price (eur)');
+    const idxDatumNakupu = header.indexOf('date bought');
+    const idxRelease = header.indexOf('set release date');
+
+    if(idxKod === -1 || idxProdukt === -1){
+      alert("This CSV doesn't look right (missing the Code / Product columns). Try exporting from this tool again and importing that file.");
+      return;
+    }
+
+    // Build lookup: code -> item names (to validate the row actually matches a known pack)
+    const codeToItems = {};
+    DATA.forEach(([setName, items])=>{
+      const code = codeOf(setName);
+      codeToItems[code] = items;
+    });
+
+    let matched = 0, unmatched = 0;
+    for(let i=1;i<lines.length;i++){
+      const cols = parseCSVLine(lines[i]);
+      const code = (cols[idxKod]||'').trim();
+      const produkt = (cols[idxProdukt]||'').trim();
+      const items = codeToItems[code];
+      if(!items){ unmatched++; continue; }
+      const ii = items.indexOf(produkt);
+      if(ii === -1){ unmatched++; continue; }
+      const id = 'p_'+code+'_'+ii;
+      const vlastnim = idxVlastnim>=0 ? (cols[idxVlastnim]||'').trim().toUpperCase() === 'YES' : false;
+      const market = idxMarket>=0 ? (cols[idxMarket]||'').trim() : '';
+      const cena = idxCena>=0 ? (cols[idxCena]||'').trim() : '';
+      const datumNakupu = idxDatumNakupu>=0 ? (cols[idxDatumNakupu]||'').trim() : '';
+      store[id] = Object.assign(getEntry(id), { owned: vlastnim, price: cena, date: datumNakupu, market: market });
+      matched++;
+      if(idxRelease>=0){
+        const rel = (cols[idxRelease]||'').trim();
+        if(rel){ releaseStore[code] = rel; }
+      }
+    }
+    saveStore();
+    saveReleaseStore();
+    render();
+    alert(`Import done.\nItems imported: ${matched}\nRows not recognized: ${unmatched}`);
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+});
+
+render();
+</script>
+</body>
+</html>
