@@ -69,6 +69,10 @@
     padding:8px 14px; font-size:13px; color:var(--muted);
   }
   .stat b{ color:var(--text); font-size:15px; display:block;}
+  .stat small{ display:block; font-size:11px; font-weight:500; color:var(--muted); margin-top:3px; line-height:1.35; }
+  .stat small:empty{ display:none; }
+  .stat small.gain{ color:var(--green); }
+  .stat small.loss{ color:var(--red); }
   .stat b.stat-gain{ color:var(--green); }
   .stat b.stat-loss{ color:var(--red); }
   .progress-wrap{ margin-top:12px; }
@@ -115,6 +119,7 @@
   .modal-box{
     background:var(--panel); border:1px solid var(--accent); border-radius:12px;
     max-width:520px; width:100%; padding:20px 22px; position:relative;
+    max-height:calc(100vh - 40px); overflow-y:auto;
     box-shadow:0 0 0 1px rgba(201,162,75,0.25), 0 12px 40px rgba(0,0,0,0.5);
   }
   .modal-year{ color:var(--accent); font-weight:700; font-size:12px; letter-spacing:.3px; text-transform:uppercase; margin-bottom:6px; }
@@ -201,11 +206,14 @@
     font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; margin-left:7px;
     flex-shrink:0;
   }
-  .delete-set-btn{
+  .delete-set-btn, .edit-set-btn{
     font-size:12.5px; margin-left:8px; cursor:pointer; opacity:.55; padding:2px 4px; border-radius:5px;
     flex-shrink:0;
   }
   .delete-set-btn:hover{ opacity:1; background:rgba(226,85,90,0.15); }
+  .set-actions{ display:inline-flex; align-items:center; flex-shrink:0; }
+  .edit-set-btn{ margin-left:6px; }
+  .edit-set-btn:hover{ opacity:1; background:rgba(122,162,247,0.18); }
 
   @keyframes flashPulse{
     0%{ box-shadow:0 0 0 3px rgba(122,162,247,0.9); }
@@ -276,7 +284,6 @@
   }
   .item-row.zero-market .item-name{ color:var(--red); }
   .item-row.zero-market [data-role=market]{ border-color:rgba(226,85,90,0.6); background:rgba(226,85,90,0.08); }
-  .item-row [data-role=market].market-hidden{ visibility:hidden; }
   .item-row.watching{
     background:var(--pink-bg);
     box-shadow:inset 3px 0 0 0 var(--pink), inset 0 0 0 1px rgba(236,111,166,0.35);
@@ -337,6 +344,21 @@
     pointer-events:none; white-space:nowrap; overflow:hidden;
   }
   .item-row input:disabled ~ .date-hint-overlay{ color:rgba(139,147,167,0.45); }
+  .empty-state{ max-width:980px; margin:36px auto; padding:28px 16px; text-align:center; }
+  .empty-title{ font-family:var(--serif); font-size:19px; font-weight:700; margin-bottom:6px; }
+  .empty-desc{ color:var(--muted); font-size:13.5px; margin-bottom:16px; }
+  .invalid-date{ border-color:var(--red) !important; color:var(--red) !important; box-shadow:0 0 0 1px rgba(226,85,90,0.45); }
+  .toast{
+    position:fixed; left:50%; bottom:24px; z-index:300; max-width:calc(100vw - 32px);
+    transform:translateX(-50%) translateY(16px); opacity:0; pointer-events:none;
+    background:#11131a; border:1px solid var(--border); border-radius:10px; padding:10px 16px;
+    font-size:13px; line-height:1.45; color:var(--text); box-shadow:0 10px 28px rgba(0,0,0,0.5);
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .danger-zone{ border-top:1px solid var(--border); padding-top:14px; }
+  .danger-zone button{ border-color:rgba(226,85,90,0.5); color:var(--red); }
+  .danger-zone button:hover{ background:rgba(226,85,90,0.12); }
   footer{ text-align:center; color:var(--muted); font-size:12px; padding:20px; }
   footer p{ margin:0 0 6px 0; }
   footer p:last-child{ margin-bottom:0; }
@@ -351,12 +373,34 @@
     .item-row .date-wrap{ grid-area:date; }
     .set-header{ grid-template-columns: 26px 1fr; grid-template-areas: "chk main" ". release"; row-gap:6px; }
     .set-header-check{ grid-area:chk; }
-    .set-header-main{ grid-area:main; display:block; overflow:visible; }
+    .set-header-main{ grid-area:main; display:flex; flex-wrap:wrap; align-items:center; row-gap:2px; overflow:visible; }
     .set-title, .set-code, .group-tag{ white-space:normal; }
     .set-age{ flex-shrink:0; min-width:auto; overflow:visible; text-overflow:clip; white-space:normal; }
     .set-header .date-wrap{ grid-area:release; }
     .set-header-chev{ display:none; }
     header{ position:static; }
+  }
+
+  /* ---- Touch screens: comfortable tap targets, and 16px fields so iOS doesn't zoom in on focus ---- */
+  @media (pointer:coarse), (max-width:640px){
+    .controls button, .controls select, .modal-actions button, .ghost-btn{ min-height:42px; }
+    input[type=text], input[type=url], select#filter, select#sortSel{ height:44px; font-size:16px; }
+    .item-row input[type=number], .item-row input[type=date], .release-date{ font-size:16px; padding:8px 10px; min-height:42px; }
+    .date-hint-overlay{ font-size:16px; padding:0 10px; }
+    .item-row input[type=checkbox]{ width:24px; height:24px; }
+    .item-watch-toggle{ width:32px; height:32px; font-size:16px; opacity:.7; }
+    .milestone-info-btn{ width:28px; height:28px; font-size:14px; margin-left:8px; }
+    .edit-set-btn, .delete-set-btn{
+      min-width:38px; min-height:38px; display:inline-flex; align-items:center; justify-content:center;
+      font-size:17px; opacity:.8;
+    }
+    .item-watch-visit{ width:42px; height:42px; font-size:16px; }
+    .item-watch-url{ min-height:42px; font-size:16px; }
+    .remove-pack-row{ width:42px; height:42px; font-size:20px; }
+    .modal-close{ top:6px; right:6px; padding:8px 14px; font-size:26px; }
+    .form-input{ font-size:16px; padding:11px 12px; }
+    .form-checkbox-label input[type=checkbox]{ width:22px; height:22px; }
+    .help-link{ padding:6px; font-size:14px; }
   }
 </style>
 </head>
@@ -381,6 +425,7 @@
       <option value="all">Show all</option>
       <option value="owned">Owned only</option>
       <option value="missing">Missing only</option>
+      <option value="to-buy" id="filterToBuyOpt">To buy</option>
       <option value="has-market">Has market price</option>
     </select>
     <select id="sortSel" aria-label="Sort order">
@@ -395,7 +440,6 @@
     </select>
     <button id="expandAll">Expand all</button>
     <button id="collapseAll">Collapse all</button>
-    <button id="resetBtn">Clear data</button>
     <button id="yearStatsBtn">Packs by year</button>
     <button class="primary" id="addSetBtn">+ Add new set</button>
     <button id="settingsBtn" aria-label="Open settings">⚙ Settings</button>
@@ -409,8 +453,8 @@
   <div class="stats">
     <div class="stat">Owned<b id="statOwned">0</b></div>
     <div class="stat">Out of<b id="statTotal">0</b></div>
-    <div class="stat">Total spent<b id="statSpent">0</b></div>
-    <div class="stat">Collection value<b id="statValue">0</b></div>
+    <div class="stat">Total spent<b id="statSpent">0</b><small id="statSpentNote"></small></div>
+    <div class="stat" title="The market price of every pack you own, added up. Packs without a market price count as 0.">Collection value<b id="statValue">0</b><small id="statValueNote"></small></div>
     <div class="stat">Sets<b id="statSets">0</b></div>
     <div class="stat">Sets completed<b id="statComplete">0</b></div>
   </div>
@@ -426,10 +470,11 @@
     <div class="modal-title">How this works</div>
     <ul class="onboarding-list">
       <li>Click a set's header to expand or collapse it. Check off each pack you own.</li>
-      <li>Fill in <b>Market price</b> on a pack to track its value — a price of 0 flags it in red as currently unbuyable.</li>
+      <li>Fill in <b>Market price</b> on a pack — what it costs to buy today. Once you own the pack the same field becomes <b>Value now</b>, and <b>Collection value</b> adds those up (packs without it count as 0). A price of 0 on a pack you don't own flags it in red as currently unbuyable.</li>
       <li>Fill in a set's <b>Release date</b> to unlock its age badge, chronological pack numbering, and the "Packs by year" chart.</li>
       <li>The <b>i</b> bubble next to some set names opens a bit of Magic history trivia about that set.</li>
-      <li>Click the <b>☆</b> next to a pack to mark it as something you're planning to buy, and paste a link to where you found it.</li>
+      <li>Click the <b>☆</b> next to a pack to mark it as something you're planning to buy, and paste a link to where you found it. Choose <b>To buy</b> in the filter menu to see just that list.</li>
+      <li>Sets you added yourself have a <b>✏</b> button to edit them (rename, change packs, milestone) and a <b>🗑</b> button to delete them.</li>
       <li>Use <b>Export CSV</b> for a spreadsheet-friendly copy, or <b>Backup (JSON)</b> for a full, restorable backup of everything (including your plan-to-buy list and custom sets).</li>
     </ul>
     <div class="modal-actions">
@@ -446,6 +491,19 @@
   </div>
 </div>
 
+<div class="onboarding-banner hidden" id="backupReminder">
+  <div class="onboarding-box">
+    <div class="modal-title">Time for a backup</div>
+    <div class="modal-desc" id="backupReminderText"></div>
+    <div class="modal-actions" style="margin-top:12px;">
+      <button type="button" id="backupLaterBtn" class="ghost-btn">Remind me in a week</button>
+      <button type="button" id="backupNowBtn" class="primary">Back up now</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <div class="modal-overlay hidden" id="settingsModal">
   <div class="modal-box" style="max-width:420px;">
     <button class="modal-close" id="settingsModalClose" aria-label="Close settings">&times;</button>
@@ -460,7 +518,28 @@
         <option value="zł">zł Polish Złoty</option>
         <option value="¥">¥ Yen</option>
       </select>
-      <div class="form-hint">Changes how money is displayed on screen. CSV export/import always stays in a fixed format, regardless of this setting.</div>
+      <div class="form-hint">Only changes the symbol shown next to your amounts — it does <b>not</b> convert them. CSV export labels its price columns with this currency's code; importing a CSV takes the numbers as they are.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="numberFormatSel">Number format</label>
+      <select id="numberFormatSel" class="form-input">
+        <option value="auto">Automatic (browser language)</option>
+        <option value="en-US">1,234.56 (English)</option>
+        <option value="de-DE">1.234,56 (German)</option>
+        <option value="sk-SK">1 234,56 (Slovak / Czech)</option>
+      </select>
+      <div class="form-hint">How amounts such as <b id="numberFormatPreview">—</b> are written on screen.</div>
+    </div>
+    <div class="form-group">
+      <span class="form-label">Your data</span>
+      <div class="form-hint" style="margin-top:0;">Everything is stored only in this browser. Last backup: <b id="lastBackupText">never</b>.</div>
+      <div style="margin-top:8px;"><button type="button" id="settingsBackupBtn" class="secondary">Back up now (JSON)</button></div>
+      <div class="form-hint" style="margin-top:8px;"><b>On an iPhone?</b> Safari can clear the data of sites you haven't opened for a while, and the Home Screen icon keeps its own storage, separate from the Safari tab. Add this page to your Home Screen first, open it from there, and use <b>Restore (JSON)</b> once to bring your data in.</div>
+    </div>
+    <div class="form-group danger-zone">
+      <span class="form-label">Danger zone</span>
+      <button type="button" id="resetBtn">Clear collection data…</button>
+      <div class="form-hint">Removes ownership, prices, purchase dates and your To buy list. Set release dates and sets you added are kept. A backup is downloaded first.</div>
     </div>
     <div class="modal-actions">
       <button type="button" id="settingsCloseBtn" class="primary">Done</button>
@@ -469,6 +548,12 @@
 </div>
 
 <main id="app"></main>
+
+<div class="empty-state hidden" id="emptyState">
+  <div class="empty-title" id="emptyTitle"></div>
+  <div class="empty-desc" id="emptyDesc"></div>
+  <button type="button" id="emptyReset" class="ghost-btn">Show everything</button>
+</div>
 
 <div class="modal-overlay hidden" id="milestoneModal">
   <div class="modal-box">
@@ -491,8 +576,8 @@
 <div class="modal-overlay hidden" id="addSetModal">
   <div class="modal-box" style="max-width:580px;">
     <button class="modal-close" id="addSetModalClose" aria-label="Close">&times;</button>
-    <div class="modal-title">Add a new set</div>
-    <div class="modal-desc" style="margin-bottom:18px;">For a set that isn't in the built-in list yet. You can delete it again later (🗑 next to its name) if you need to fix something.</div>
+    <div class="modal-title" id="addSetModalTitle">Add a new set</div>
+    <div class="modal-desc" id="addSetModalDesc" style="margin-bottom:18px;">For a set that isn't in the built-in list yet. You can edit it later (✏ next to its name) or delete it (🗑).</div>
 
     <div class="form-group">
       <label class="form-label">Set name</label>
@@ -532,7 +617,7 @@
     <div class="form-group milestone-toggle-wrap">
       <label class="form-checkbox-label">
         <input type="checkbox" id="newSetMilestoneToggle">
-        Add a milestone for this set <span class="form-hint" style="display:inline;">(optional — shows a gold border and an "i" info button)</span>
+        <span>Add a milestone for this set <span class="form-hint" style="display:inline;">(optional — shows a gold border and an "i" info button)</span></span>
       </label>
       <div id="newSetMilestoneFields" class="hidden">
         <input type="text" id="newSetMYear" class="form-input" placeholder="Year, e.g. 2026" style="max-width:160px; margin-bottom:8px;">
@@ -1013,14 +1098,28 @@ const CUSTOM_SETS_KEY = 'mtg_pack_tracker_custom_sets_v1';
 const MIGRATED_KEY = 'mtg_pack_tracker_migrated_to_code_ids_v1';
 const CURRENCY_KEY = 'mtg_pack_tracker_currency_v1';
 const ONBOARDING_KEY = 'mtg_pack_tracker_onboarding_dismissed_v1';
+const NUMFMT_KEY = 'mtg_pack_tracker_number_format_v1';
+const LASTBACKUP_KEY = 'mtg_pack_tracker_last_backup_v1';
+const BACKUP_SNOOZE_KEY = 'mtg_pack_tracker_backup_snooze_until_v1';
+const PERSIST_ASKED_KEY = 'mtg_pack_tracker_persist_asked_v1';
+let lastBackupAt = 0;
+try{ lastBackupAt = parseInt(localStorage.getItem(LASTBACKUP_KEY) || '0', 10) || 0; }catch(e){ lastBackupAt = 0; }
+let backupReminderShown = false;
 let store = {};
 try{ store = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }catch(e){ store = {}; }
 let releaseStore = {};
 try{ releaseStore = JSON.parse(localStorage.getItem(RELEASE_KEY) || '{}'); }catch(e){ releaseStore = {}; }
 let customSets = [];
-try{ customSets = JSON.parse(localStorage.getItem(CUSTOM_SETS_KEY) || '[]'); }catch(e){ customSets = []; }
+try{ customSets = sanitizeCustomSets(JSON.parse(localStorage.getItem(CUSTOM_SETS_KEY) || '[]')); }catch(e){ customSets = []; }
 let currencySymbol = '€';
 try{ currencySymbol = localStorage.getItem(CURRENCY_KEY) || '€'; }catch(e){ currencySymbol = '€'; }
+// Number format: 'auto' follows the browser language, otherwise an explicit locale tag.
+const NUMBER_FORMATS = ['auto','en-US','de-DE','sk-SK'];
+let numberFormat = 'auto';
+try{
+  const nf = localStorage.getItem(NUMFMT_KEY);
+  if(nf && NUMBER_FORMATS.indexOf(nf) !== -1) numberFormat = nf;
+}catch(e){ numberFormat = 'auto'; }
 
 let saveErrorShown = false;
 function reportSaveError(){
@@ -1032,6 +1131,7 @@ function reportSaveError(){
 function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }catch(e){ reportSaveError(); } }
 function saveReleaseStore(){ try{ localStorage.setItem(RELEASE_KEY, JSON.stringify(releaseStore)); }catch(e){ reportSaveError(); } }
 function saveCurrency(){ try{ localStorage.setItem(CURRENCY_KEY, currencySymbol); }catch(e){ reportSaveError(); } }
+function saveNumberFormat(){ try{ localStorage.setItem(NUMFMT_KEY, numberFormat); }catch(e){ reportSaveError(); } }
 function saveCustomSets(){ try{ localStorage.setItem(CUSTOM_SETS_KEY, JSON.stringify(customSets)); }catch(e){ reportSaveError(); } }
 
 // One-time migration: old ids/keys were based on array position ('p_<index>_<item>',
@@ -1138,6 +1238,30 @@ function setEntry(id, patch){
   saveStore();
   updateStats();
 }
+// A pack is "to buy" while it is starred and you don't own it yet.
+function isToBuy(entry){ return !!(entry.considering && !entry.owned); }
+
+// ---- Date sanity: catches typos like year 0026, and dates from the future for purchases ----
+const DATE_MIN = '1993-01-01'; // the first Magic boosters (Alpha) are from 1993
+function isoDate(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function boughtDateMax(){ return isoDate(new Date()); }
+function releaseDateMax(){ const d = new Date(); d.setFullYear(d.getFullYear() + 3); return isoDate(d); } // upcoming sets are announced ahead
+function isPlausibleDate(v, max){ return /^\d{4}-\d{2}-\d{2}$/.test(v) && v >= DATE_MIN && v <= max; }
+function flagDate(inp, bad, msg){
+  inp.classList.toggle('invalid-date', !!bad);
+  if(bad) inp.title = msg || 'This date looks wrong';
+  else inp.removeAttribute('title');
+}
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 4000);
+}
 
 function ageText(dateStr){
   if(!dateStr) return '';
@@ -1208,10 +1332,11 @@ function openMilestoneModal(milestones){
   }).join('');
   document.getElementById('milestoneModal').classList.remove('hidden');
 }
+// Escapes text for use both inside element content and inside "quoted" attributes.
 function escapeHtml(s){
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 function closeMilestoneModal(){
   document.getElementById('milestoneModal').classList.add('hidden');
@@ -1224,8 +1349,24 @@ document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape'){ closeMilestoneModal(); closeYearModal(); closeAddSetModal(); closeSettingsModal(); closeOnboarding(); }
 });
 
-function eur(n){
-  return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ' + currencySymbol;
+// ---- Money formatting ----
+// The stored currency is the on-screen symbol (kept for backward compatibility with
+// earlier saves/backups); ISO codes are derived from it for CSV labels and Intl.
+const CURRENCY_CODES = { '€':'EUR', '$':'USD', '£':'GBP', 'Kč':'CZK', 'zł':'PLN', '¥':'JPY' };
+function currencyCode(){ return CURRENCY_CODES[currencySymbol] || 'EUR'; }
+function resolvedLocale(){
+  if(numberFormat !== 'auto') return numberFormat;
+  return (typeof navigator !== 'undefined' && (navigator.language || (navigator.languages && navigator.languages[0]))) || 'en-US';
+}
+// Formats an amount in the chosen currency using the chosen (or browser) number style,
+// e.g. "1 234,56 €" (sk-SK), "€1,234.56" (en-US), "1.234,56 €" (de-DE).
+function formatMoney(n){
+  const opts = { minimumFractionDigits:2, maximumFractionDigits:2 };
+  try{
+    return new Intl.NumberFormat(resolvedLocale(), Object.assign({ style:'currency', currency:currencyCode(), currencyDisplay:'narrowSymbol' }, opts)).format(n);
+  }catch(e){
+    return n.toLocaleString('en-US', opts) + ' ' + currencySymbol;
+  }
 }
 
 function openYearModal(){
@@ -1294,14 +1435,14 @@ function openYearModal(){
       const missingCount = total - owned;
 
       const ownedTitle = owned > 0
-        ? `Owned in ${y}: ${owned} pack${owned===1?'':'s'}\nSpent so far: ${eur(spent)}`
+        ? `Owned in ${y}: ${owned} pack${owned===1?'':'s'}\nSpent so far: ${formatMoney(spent)}`
         : `No packs owned yet in ${y}`;
 
       let missingTitleLines = [];
       if(missingCount > 0){
         missingTitleLines.push(`Still missing in ${y}: ${missingCount} pack${missingCount===1?'':'s'}`);
         if(missingPriced > 0){
-          missingTitleLines.push(`~${eur(missingSum)} to complete (from ${missingPriced} priced pack${missingPriced===1?'':'s'})`);
+          missingTitleLines.push(`~${formatMoney(missingSum)} to complete (from ${missingPriced} priced pack${missingPriced===1?'':'s'})`);
         } else {
           missingTitleLines.push(`No market prices filled in yet for these`);
         }
@@ -1331,7 +1472,7 @@ function openYearModal(){
     html += `<div class="missing-sets-wrap">
       <div class="missing-sets-title">${missingSets.length} set${missingSets.length===1?'':'s'} without a release date aren't counted above — click one to jump to it and fill it in:</div>
       <div>${missingSets.map(s=>
-        `<span class="missing-set-pill" data-jump-code="${s.code}">${escapeHtml(s.title)} <span class="pill-code">${escapeHtml(s.code)}</span></span>`
+        `<span class="missing-set-pill" data-jump-code="${escapeHtml(s.code)}">${escapeHtml(s.title)} <span class="pill-code">${escapeHtml(s.code)}</span></span>`
       ).join('')}</div>
     </div>`;
   }
@@ -1377,6 +1518,12 @@ function jumpToSet(code){
   closeYearModal();
   const el = document.getElementById('setgroup-'+code);
   if(!el) return;
+  if(el.classList.contains('hidden')){
+    // an active search/filter is hiding the target set -- clear it so the jump lands
+    searchInp.value = '';
+    filterSel.value = 'all';
+    applyFilters();
+  }
   el.classList.remove('collapsed');
   setTimeout(()=>{
     if(el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -1397,16 +1544,21 @@ document.getElementById('yearModal').addEventListener('click', (e)=>{
 // ============ Add / delete custom sets ============
 let packRowCounter = 0;
 
-function addPackRow(value){
+// meta (edit mode only): { orig: index of this pack in the set before editing,
+// literal: true when the stored name doesn't start with the set name, so it must be kept as typed }
+function addPackRow(value, meta){
   const list = document.getElementById('newSetPacksList');
   const rid = 'pr'+(packRowCounter++);
   const row = document.createElement('div');
   row.className = 'pack-row';
   row.dataset.rowId = rid;
+  if(meta && meta.orig !== undefined) row.dataset.orig = String(meta.orig);
+  if(meta && meta.literal) row.dataset.literal = '1';
   row.innerHTML = `
-    <input type="text" class="form-input pack-name-input" list="packTypeSuggestions" placeholder="e.g. Draft Booster Pack" value="${value ? escapeHtml(value) : ''}">
-    <button type="button" class="remove-pack-row" title="Remove this pack">&times;</button>
+    <input type="text" class="form-input pack-name-input" list="packTypeSuggestions" placeholder="e.g. Draft Booster Pack" aria-label="Pack type">
+    <button type="button" class="remove-pack-row" title="Remove this pack" aria-label="Remove this pack">&times;</button>
   `;
+  row.querySelector('.pack-name-input').value = value || '';
   row.querySelector('.remove-pack-row').addEventListener('click', ()=>{
     row.remove();
     updateRemovePackButtons();
@@ -1444,17 +1596,61 @@ function resetAddSetForm(){
   addPackRow('Collector Booster Pack');
 }
 
-function allKnownCodes(){
-  return new Set(DATA.map(([setName])=>codeOf(setName).toUpperCase()));
+function allKnownCodes(exceptCode){
+  const codes = new Set(DATA.map(([setName])=>codeOf(setName).toUpperCase()));
+  if(exceptCode) codes.delete(String(exceptCode).toUpperCase());
+  return codes;
+}
+
+// null = the modal is adding a new set; otherwise the code of the custom set being edited
+let editingSetCode = null;
+
+function setAddSetModalMode(editing){
+  document.getElementById('addSetModalTitle').textContent = editing ? 'Edit set' : 'Add a new set';
+  document.getElementById('addSetModalDesc').textContent = editing
+    ? 'Packs you keep (even renamed or reordered) keep their saved ownership, prices and dates. Removing a pack deletes its saved data. Changing the code is fine too — saved data follows it.'
+    : "For a set that isn't in the built-in list yet. You can edit it later (✏ next to its name) or delete it (🗑).";
+  document.getElementById('saveAddSetBtn').textContent = editing ? 'Save changes' : 'Add set';
 }
 
 function openAddSetModal(){
+  editingSetCode = null;
   resetAddSetForm();
+  setAddSetModalMode(false);
+  document.getElementById('addSetModal').classList.remove('hidden');
+  document.getElementById('newSetName').focus();
+}
+
+function openEditSetModal(code){
+  const cs = customSets.find(c=>c.code === code);
+  if(!cs) return;
+  editingSetCode = code;
+  resetAddSetForm();
+  setAddSetModalMode(true);
+  const name = titleOf(cs.header);
+  document.getElementById('newSetName').value = name;
+  document.getElementById('newSetCode').value = cs.code;
+  document.getElementById('newSetGroup').value = cs.group || '';
+  // one row per existing pack, remembering where it sat so saved data can follow it
+  document.getElementById('newSetPacksList').innerHTML = '';
+  cs.items.forEach((item, ii)=>{
+    const prefix = name + ' ';
+    if(item.startsWith(prefix)) addPackRow(item.slice(prefix.length), { orig: ii });
+    else addPackRow(item, { orig: ii, literal: true });
+  });
+  if(cs.milestone){
+    document.getElementById('newSetMilestoneToggle').checked = true;
+    document.getElementById('newSetMilestoneFields').classList.remove('hidden');
+    document.getElementById('newSetMYear').value = cs.milestone.year || '';
+    document.getElementById('newSetMTitle').value = cs.milestone.title || '';
+    document.getElementById('newSetMDesc').value = cs.milestone.desc || '';
+  }
   document.getElementById('addSetModal').classList.remove('hidden');
   document.getElementById('newSetName').focus();
 }
 function closeAddSetModal(){
   document.getElementById('addSetModal').classList.add('hidden');
+  editingSetCode = null;
 }
 
 document.getElementById('addSetBtn').addEventListener('click', openAddSetModal);
@@ -1471,9 +1667,18 @@ function syncCurrencySelect(){
   if(!sel) return;
   const hasOption = Array.from(sel.options).some(o=>o.value===currencySymbol);
   sel.value = hasOption ? currencySymbol : '€';
+  syncNumberFormatSelect();
+}
+function syncNumberFormatSelect(){
+  const sel = document.getElementById('numberFormatSel');
+  if(!sel) return;
+  sel.value = (NUMBER_FORMATS.indexOf(numberFormat) !== -1) ? numberFormat : 'auto';
+  const prev = document.getElementById('numberFormatPreview');
+  if(prev) prev.textContent = formatMoney(1234.56);
 }
 function openSettingsModal(){
   syncCurrencySelect();
+  updateBackupStatus();
   document.getElementById('settingsModal').classList.remove('hidden');
 }
 function closeSettingsModal(){
@@ -1488,6 +1693,13 @@ document.getElementById('settingsModal').addEventListener('click', (e)=>{
 document.getElementById('currencySel').addEventListener('change', (e)=>{
   currencySymbol = e.target.value;
   saveCurrency();
+  syncNumberFormatSelect();
+  updateStats();
+});
+document.getElementById('numberFormatSel').addEventListener('change', (e)=>{
+  numberFormat = (NUMBER_FORMATS.indexOf(e.target.value) !== -1) ? e.target.value : 'auto';
+  saveNumberFormat();
+  syncNumberFormatSelect();
   updateStats();
 });
 
@@ -1520,70 +1732,125 @@ document.getElementById('newSetMilestoneToggle').addEventListener('change', (e)=
   document.getElementById('newSetMilestoneFields').classList.toggle('hidden', !e.target.checked);
 });
 
+// Reads + validates the add/edit form. Returns { error, el, field } or the cleaned values.
+function readSetForm(){
+  const name = document.getElementById('newSetName').value.trim();
+  const code = document.getElementById('newSetCode').value.trim();
+  if(!name) return { error: 'Give the set a name.', field: 'form', el: 'newSetName' };
+  if(!code) return { error: 'A set code is required.', field: 'code', el: 'newSetCode' };
+  if(allKnownCodes(editingSetCode).has(code.toUpperCase())){
+    return { error: `"${code}" is already used by another set. Pick a different code.`, field: 'code', el: 'newSetCode' };
+  }
+
+  const rows = [];
+  document.querySelectorAll('#newSetPacksList .pack-row').forEach(r=>{
+    const type = r.querySelector('.pack-name-input').value.trim();
+    if(!type) return; // an emptied row simply means "no pack here"
+    rows.push({
+      item: r.dataset.literal === '1' ? type : (name + ' ' + type).trim(),
+      orig: r.dataset.orig !== undefined ? parseInt(r.dataset.orig, 10) : undefined
+    });
+  });
+  if(rows.length === 0) return { error: 'Add at least one booster pack.', field: 'form' };
+  if(new Set(rows.map(r=>r.item)).size !== rows.length){
+    return { error: 'Two packs have the same name — give each pack a different name.', field: 'form' };
+  }
+
+  let milestone = null;
+  if(document.getElementById('newSetMilestoneToggle').checked){
+    const y = document.getElementById('newSetMYear').value.trim();
+    const t = document.getElementById('newSetMTitle').value.trim();
+    const d = document.getElementById('newSetMDesc').value.trim();
+    if(!y || !t || !d){
+      return { error: 'Fill in year, title and description for the milestone, or untick the milestone checkbox.', field: 'form' };
+    }
+    milestone = { year:y, title:t, desc:d };
+  }
+  const group = document.getElementById('newSetGroup').value.trim();
+  return { name, code, rows, milestone, group: group || null };
+}
+
+function hasMeaningfulData(entry){
+  return !!(entry && (entry.owned || entry.price || entry.date || entry.market || entry.considering || entry.watchUrl));
+}
+
+// Applies an edit to an existing custom set, moving every saved pack entry (and the
+// release date) to its new position / code so nothing is lost for packs you keep.
+function applyCustomSetEdit(oldCode, f){
+  const cs = customSets.find(c=>c.code === oldCode);
+  if(!cs) return false;
+
+  const moved = {};
+  f.rows.forEach((r, newIdx)=>{
+    if(r.orig === undefined) return;
+    const old = store['p_'+oldCode+'_'+r.orig];
+    if(old) moved['p_'+f.code+'_'+newIdx] = old;
+  });
+  Object.keys(store).forEach(key=>{
+    if(key.startsWith('p_'+oldCode+'_')) delete store[key];
+  });
+  Object.assign(store, moved);
+
+  if(oldCode !== f.code){
+    if(releaseStore[oldCode] !== undefined){ releaseStore[f.code] = releaseStore[oldCode]; }
+    delete releaseStore[oldCode];
+  }
+  delete MILESTONES[oldCode];
+  delete GROUPS[oldCode];
+
+  cs.code = f.code;
+  cs.header = `${f.name} (${f.code})`;
+  cs.items = f.rows.map(r=>r.item);
+  cs.milestone = f.milestone;
+  cs.group = f.group;
+
+  saveStore();
+  saveReleaseStore();
+  saveCustomSets();
+  rebuildDataFromCustomSets();
+  rebuildAll();
+  return true;
+}
+
 document.getElementById('saveAddSetBtn').addEventListener('click', ()=>{
   const codeErrEl = document.getElementById('newSetCodeError');
   const formErrEl = document.getElementById('newSetFormError');
   codeErrEl.classList.add('hidden');
   formErrEl.classList.add('hidden');
 
-  const name = document.getElementById('newSetName').value.trim();
-  const code = document.getElementById('newSetCode').value.trim();
-
-  if(!name){
-    formErrEl.textContent = 'Give the set a name.';
-    formErrEl.classList.remove('hidden');
-    document.getElementById('newSetName').focus();
-    return;
-  }
-  if(!code){
-    codeErrEl.textContent = 'A set code is required.';
-    codeErrEl.classList.remove('hidden');
-    document.getElementById('newSetCode').focus();
-    return;
-  }
-  if(allKnownCodes().has(code)){
-    codeErrEl.textContent = `"${code}" is already used by another set. Pick a different code.`;
-    codeErrEl.classList.remove('hidden');
-    document.getElementById('newSetCode').focus();
+  const f = readSetForm();
+  if(f.error){
+    const target = (f.field === 'code') ? codeErrEl : formErrEl;
+    target.textContent = f.error;
+    target.classList.remove('hidden');
+    if(f.el) document.getElementById(f.el).focus();
     return;
   }
 
-  const packInputs = Array.from(document.querySelectorAll('#newSetPacksList .pack-name-input'));
-  const packTypes = packInputs.map(i=>i.value.trim()).filter(v=>v.length>0);
-  if(packTypes.length === 0){
-    formErrEl.textContent = 'Add at least one booster pack.';
-    formErrEl.classList.remove('hidden');
+  if(editingSetCode){
+    const oldCode = editingSetCode;
+    const cs = customSets.find(c=>c.code === oldCode);
+    // warn before packs that hold saved data get dropped
+    const keep = new Set(f.rows.filter(r=>r.orig !== undefined).map(r=>r.orig));
+    let dropped = 0;
+    cs.items.forEach((item, ii)=>{
+      if(!keep.has(ii) && hasMeaningfulData(store['p_'+oldCode+'_'+ii])) dropped++;
+    });
+    if(dropped > 0 && !confirm(`${dropped} pack${dropped===1?'':'s'} you're removing ha${dropped===1?'s':'ve'} saved data (ownership, prices or dates). Removing ${dropped===1?'it':'them'} deletes that data for good.\n\nContinue?`)) return;
+    applyCustomSetEdit(oldCode, f);
+    closeAddSetModal();
+    render();
+    jumpToSet(f.code);
     return;
   }
-  const items = packTypes.map(t=> (name+' '+t).trim());
-  // guard against accidental duplicate pack names within the same set
-  const uniqueItems = [...new Set(items)];
 
-  const wantsMilestone = document.getElementById('newSetMilestoneToggle').checked;
-  let milestone = null;
-  if(wantsMilestone){
-    const y = document.getElementById('newSetMYear').value.trim();
-    const t = document.getElementById('newSetMTitle').value.trim();
-    const d = document.getElementById('newSetMDesc').value.trim();
-    if(!y || !t || !d){
-      formErrEl.textContent = 'Fill in year, title and description for the milestone, or untick the milestone checkbox.';
-      formErrEl.classList.remove('hidden');
-      return;
-    }
-    milestone = { year:y, title:t, desc:d };
-  }
-
-  const groupName = document.getElementById('newSetGroup').value.trim();
-
-  const header = `${name} (${code})`;
-  const customEntry = { code, header, items: uniqueItems, milestone, group: groupName || null };
-  customSets.push(customEntry);
+  customSets.push({ code: f.code, header: `${f.name} (${f.code})`, items: f.rows.map(r=>r.item), milestone: f.milestone, group: f.group });
   saveCustomSets();
   rebuildDataFromCustomSets();
   rebuildAll();
   closeAddSetModal();
   render();
-  jumpToSet(code);
+  jumpToSet(f.code);
 });
 
 function deleteCustomSet(code, title){
@@ -1635,16 +1902,16 @@ function render(){
     header.innerHTML = `
       <span class="set-header-check set-count" data-role="setcheck">0/${items.length}</span>
       <div class="set-header-main">
-        <span class="set-title">${titleText}</span>
-        <span class="set-code">${codeText}</span>
-        ${groupName ? `<span class="group-tag">${groupName}</span>` : ''}
+        <span class="set-title">${escapeHtml(titleText)}</span>
+        <span class="set-code">${escapeHtml(codeText)}</span>
+        ${groupName ? `<span class="group-tag">${escapeHtml(groupName)}</span>` : ''}
         ${isCustom ? '<span class="custom-badge" title="You added this set yourself">custom</span>' : ''}
         ${milestone ? `<span class="milestone-info-btn" data-role="milestone-btn" role="button" tabindex="0" aria-label="Why ${escapeHtml(titleText)} is special" title="Why this set is special">i</span>` : ''}
-        ${isCustom ? `<span class="delete-set-btn" data-role="delete-set-btn" role="button" tabindex="0" aria-label="Delete ${escapeHtml(titleText)}" title="Delete this custom set">🗑</span>` : ''}
+        ${isCustom ? `<span class="set-actions"><span class="edit-set-btn" data-role="edit-set-btn" role="button" tabindex="0" aria-label="Edit ${escapeHtml(titleText)}" title="Edit this custom set">✏</span><span class="delete-set-btn" data-role="delete-set-btn" role="button" tabindex="0" aria-label="Delete ${escapeHtml(titleText)}" title="Delete this custom set">🗑</span></span>` : ''}
         <span class="set-age" data-role="age"></span>
       </div>
       <div class="date-wrap" data-role="release-wrap">
-        <input type="date" class="release-date" data-code="${codeText}" value="${releaseStore[codeText]||''}" aria-label="Release date for ${escapeHtml(titleText)}">
+        <input type="date" class="release-date" data-code="${escapeHtml(codeText)}" value="${releaseStore[codeText]||''}" aria-label="Release date for ${escapeHtml(titleText)}">
         <span class="date-hint-overlay">Release date</span>
       </div>
       <span class="set-header-chev" aria-hidden="true"><span class="chev">▾</span></span>`;
@@ -1659,6 +1926,14 @@ function render(){
       });
     }
     if(isCustom){
+      const editBtn = header.querySelector('[data-role=edit-set-btn]');
+      editBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        openEditSetModal(codeText);
+      });
+      editBtn.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); e.stopPropagation(); openEditSetModal(codeText); }
+      });
       const deleteBtn = header.querySelector('[data-role=delete-set-btn]');
       deleteBtn.addEventListener('click', (e)=>{
         e.stopPropagation();
@@ -1699,10 +1974,10 @@ function render(){
         <input type="checkbox" ${entry.owned ? 'checked':''} data-role="owned">
         <span class="item-name ${entry.owned?'owned-text':''}">
           <span class="item-seq hidden" data-role="seq"></span>
-          <span class="item-name-text">${name}</span>
+          <span class="item-name-text">${escapeHtml(name)}</span>
           <button type="button" class="item-watch-toggle${entry.considering?' active':''}" data-role="watch-toggle" title="Plan to buy this">${entry.considering?'★':'☆'}</button>
         </span>
-        <input type="number" step="0.01" min="0" placeholder="Market price" value="${entry.market||''}" data-role="market" class="${entry.owned?'market-hidden':''}">
+        <input type="number" step="0.01" min="0" placeholder="${entry.owned?'Value now':'Market price'}" value="${entry.market||''}" data-role="market" title="${entry.owned?'What this pack is worth today — counts towards Collection value':'What it costs to buy this pack today'}">
         <input type="number" step="0.01" min="0" placeholder="Price paid" value="${entry.price||''}" data-role="price" ${entry.owned?'':'disabled'}>
         <div class="date-wrap">
           <input type="date" value="${entry.date||''}" data-role="date" ${entry.owned?'':'disabled'}>
@@ -1753,6 +2028,10 @@ function render(){
 
       dateInp.disabled = !entry.owned;
       setupDateHint(dateInp, dateHint);
+      dateInp.min = DATE_MIN;
+      dateInp.max = boughtDateMax();
+      const boughtOk = ()=> dateInp.value === '' || isPlausibleDate(dateInp.value, boughtDateMax());
+      flagDate(dateInp, entry.date && !isPlausibleDate(entry.date, boughtDateMax()), 'This purchase date looks wrong — please check it');
 
       marketInp.addEventListener('input', ()=>{
         setEntry(id, { market: marketInp.value });
@@ -1768,7 +2047,8 @@ function render(){
         nameSpan.classList.toggle('owned-text', owned);
         priceInp.disabled = !owned;
         dateInp.disabled = !owned;
-        marketInp.classList.toggle('market-hidden', owned);
+        marketInp.placeholder = owned ? 'Value now' : 'Market price';
+        marketInp.title = owned ? 'What this pack is worth today — counts towards Collection value' : 'What it costs to buy this pack today';
         row.classList.toggle('zero-market', !owned && isZeroMarket(marketInp.value));
         setEntry(id, { owned });
         updateSetCount(group, items.length);
@@ -1780,7 +2060,19 @@ function render(){
         updateGroupSpent(group);
       });
       priceInp.addEventListener('blur', maybeResort);
-      dateInp.addEventListener('input', ()=>{ setEntry(id, { date: dateInp.value }); });
+      dateInp.addEventListener('input', ()=>{
+        if(boughtOk()){ flagDate(dateInp, false); setEntry(id, { date: dateInp.value }); }
+        else flagDate(dateInp, true, 'Enter a date between 1993 and today');
+      });
+      dateInp.addEventListener('blur', ()=>{
+        if(boughtOk()) return;
+        const stored = getEntry(id).date || '';
+        if(dateInp.value !== stored){
+          dateInp.value = stored; // put the last saved value back
+          dateInp.dispatchEvent(new Event('input', { bubbles:true }));
+          showToast("That purchase date doesn't look right, so the previous one was kept.");
+        }
+      });
 
       itemWrap.appendChild(row);
       itemWrap.appendChild(watchPanel);
@@ -1800,18 +2092,35 @@ function render(){
     const releaseHint = header.querySelector('[data-role=release-wrap] .date-hint-overlay');
     setupDateHint(releaseInp, releaseHint);
     releaseInp.addEventListener('click', (e)=> e.stopPropagation());
+    releaseInp.min = DATE_MIN;
+    releaseInp.max = releaseDateMax();
+    const releaseOk = ()=> releaseInp.value === '' || isPlausibleDate(releaseInp.value, releaseDateMax());
+    flagDate(releaseInp, releaseStore[codeText] && !isPlausibleDate(releaseStore[codeText], releaseDateMax()), 'This release date looks wrong — please check it');
     releaseInp.addEventListener('input', ()=>{
+      if(!releaseOk()){ flagDate(releaseInp, true, 'Enter a date between 1993 and a few years ahead'); return; }
+      flagDate(releaseInp, false);
       releaseStore[codeText] = releaseInp.value;
       saveReleaseStore();
       group.dataset.release = releaseInp.value || '';
       ageEl.textContent = ageText(releaseInp.value);
       refreshSequenceBadges();
     });
-    releaseInp.addEventListener('blur', maybeResort);
+    releaseInp.addEventListener('blur', ()=>{
+      if(!releaseOk()){
+        const stored = releaseStore[codeText] || '';
+        if(releaseInp.value !== stored){
+          releaseInp.value = stored;
+          releaseInp.dispatchEvent(new Event('input', { bubbles:true }));
+          showToast("That release date doesn't look right, so the previous one was kept.");
+        }
+      }
+      maybeResort();
+    });
   });
   updateStats();
   sortGroups(document.getElementById('sortSel').value);
   refreshSequenceBadges();
+  applyFilters(); // keep an active search / filter in effect after a re-render
 }
 
 function setupDateHint(inputEl, hintEl){
@@ -1956,37 +2265,64 @@ function maybeResort(){
 document.getElementById('sortSel').addEventListener('change', (e)=> sortGroups(e.target.value));
 
 function updateStats(){
-  let owned = 0, spent = 0, completeSets = 0, value = 0;
+  let owned = 0, spent = 0, completeSets = 0, value = 0, toBuyCount = 0;
+  let pricedOwned = 0, valuedOwned = 0, pairCount = 0, pairPaid = 0, pairValue = 0;
   DATA.forEach(([setName, items])=>{
     const code = codeOf(setName);
     let allOwned = true;
     items.forEach((name, ii)=>{
       const id = 'p_'+code+'_'+ii;
       const e = getEntry(id);
+      if(isToBuy(e)) toBuyCount++;
       if(e.owned){
         owned++;
-        spent += parseFloat(e.price)||0;
-        value += parseFloat(e.market)||0;
+        const paid = parseFloat(e.price), worth = parseFloat(e.market);
+        const hasPaid = isFinite(paid), hasWorth = isFinite(worth);
+        if(hasPaid){ spent += paid; pricedOwned++; }
+        if(hasWorth){ value += worth; valuedOwned++; }
+        if(hasPaid && hasWorth){ pairCount++; pairPaid += paid; pairValue += worth; }
       } else { allOwned = false; }
     });
     if(allOwned) completeSets++;
   });
   document.getElementById('statOwned').textContent = owned;
   document.getElementById('statTotal').textContent = ALL.length;
-  document.getElementById('statSpent').textContent = eur(spent);
+  document.getElementById('statSpent').textContent = formatMoney(spent);
+  document.getElementById('statValue').textContent = formatMoney(value);
+
+  // Say how much of the number is actually backed by data, so a low total isn't mistaken for a loss.
+  const spentNote = document.getElementById('statSpentNote');
+  spentNote.textContent = (owned && pricedOwned < owned) ? `${pricedOwned} of ${owned} owned have a price paid` : '';
+  const valueNote = document.getElementById('statValueNote');
+  const lines = [];
+  if(owned && valuedOwned < owned) lines.push(`${valuedOwned} of ${owned} owned have a market price`);
+  valueNote.className = '';
+  if(pairCount){
+    const diff = pairValue - pairPaid;
+    const sign = diff > 0.004 ? '+' : '';
+    lines.push(`${sign}${formatMoney(diff)} vs paid` + (pairCount < owned ? ` (${pairCount} pack${pairCount===1?'':'s'} with both prices)` : ''));
+    valueNote.className = diff > 0.004 ? 'gain' : (diff < -0.004 ? 'loss' : '');
+  }
+  valueNote.textContent = lines.join('\n');
+  valueNote.style.whiteSpace = 'pre-line';
+  // gain/loss colour only from packs where both prices are known -- unpriced packs say nothing
   const valueEl = document.getElementById('statValue');
-  valueEl.textContent = eur(value);
   valueEl.classList.remove('stat-gain','stat-loss');
-  if(value > spent) valueEl.classList.add('stat-gain');
-  else if(value < spent) valueEl.classList.add('stat-loss');
+  if(pairCount){
+    if(pairValue - pairPaid > 0.004) valueEl.classList.add('stat-gain');
+    else if(pairValue - pairPaid < -0.004) valueEl.classList.add('stat-loss');
+  }
   document.getElementById('statSets').textContent = DATA.length;
   document.getElementById('statComplete').textContent = completeSets;
+  const toBuyOpt = document.getElementById('filterToBuyOpt');
+  if(toBuyOpt) toBuyOpt.textContent = toBuyCount ? ('To buy (' + toBuyCount + ')') : 'To buy';
 
   const pct = ALL.length ? Math.round((owned/ALL.length)*100) : 0;
   const fill = document.getElementById('progressFill');
   fill.style.width = pct + '%';
   fill.style.background = progressColor(pct);
   document.getElementById('progressPct').textContent = pct + '%';
+  if(typeof checkBackupReminder === 'function') checkBackupReminder(owned);
 }
 
 function progressColor(pct){
@@ -2012,6 +2348,7 @@ const filterSel = document.getElementById('filter');
 function applyFilters(){
   const q = searchInp.value.trim().toLowerCase();
   const mode = filterSel.value;
+  let visibleGroups = 0;
   document.querySelectorAll('.set-group').forEach(group=>{
     let anyVisible = false;
     const setMatches = group.dataset.set.includes(q);
@@ -2022,16 +2359,50 @@ function applyFilters(){
       if(q && !setMatches && !row.dataset.name.includes(q)) show = false;
       if(mode==='owned' && !entry.owned) show = false;
       if(mode==='missing' && entry.owned) show = false;
+      if(mode==='to-buy' && !isToBuy(entry)) show = false;
       if(mode==='has-market' && (entry.market===undefined || entry.market===null || entry.market==='')) show = false;
       const wrapEl = row.closest('.item-wrap') || row;
       wrapEl.classList.toggle('hidden', !show);
       if(show) anyVisible = true;
     });
     group.classList.toggle('hidden', !anyVisible);
+    if(anyVisible) visibleGroups++;
     if(q && anyVisible) group.classList.remove('collapsed');
   });
   updateGroupDividerVisibility();
+  updateEmptyState(visibleGroups, q, mode);
 }
+// When a search/filter leaves nothing on screen, say why instead of showing a blank page.
+function updateEmptyState(visibleGroups, q, mode){
+  const el = document.getElementById('emptyState');
+  if(visibleGroups > 0){ el.classList.add('hidden'); return; }
+  let title = 'Nothing to show', desc = '';
+  if(q){
+    title = 'Nothing matches "' + q + '"';
+    desc = mode === 'all' ? 'Try a shorter search, or just part of the set code.' : 'The filter may be hiding it as well.';
+  } else if(mode === 'to-buy'){
+    title = 'Your To buy list is empty';
+    desc = 'Tap the ☆ next to a pack to put it on this list.';
+  } else if(mode === 'owned'){
+    title = "You haven't marked any pack as owned yet";
+    desc = 'Tick the box next to a pack you own.';
+  } else if(mode === 'missing'){
+    title = 'Nothing is missing';
+    desc = 'You own every pack in the list.';
+  } else if(mode === 'has-market'){
+    title = 'No pack has a market price yet';
+    desc = 'Type a price into the Market price field of a pack.';
+  }
+  document.getElementById('emptyTitle').textContent = title;
+  document.getElementById('emptyDesc').textContent = desc;
+  document.getElementById('emptyReset').classList.toggle('hidden', !q && mode === 'all');
+  el.classList.remove('hidden');
+}
+document.getElementById('emptyReset').addEventListener('click', ()=>{
+  searchInp.value = '';
+  filterSel.value = 'all';
+  applyFilters();
+});
 function updateGroupDividerVisibility(){
   const children = Array.from(app.children);
   let currentDivider = null;
@@ -2058,12 +2429,11 @@ document.getElementById('collapseAll').addEventListener('click', ()=>{
 });
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  if(confirm("Really wipe all saved data (ownership, prices, dates)? A safety-net JSON backup will be downloaded automatically first, so you can restore it with \"Restore (JSON)\" if you change your mind. This can't be undone otherwise.")){
+  if(confirm("Clear your collection data (ownership, prices, purchase dates and your To buy list)?\n\nSet release dates and the sets you added yourself are kept.\nA backup file is downloaded first, so you can bring everything back with \"Restore (JSON)\".")){
     downloadBackupFile();
     store = {};
-    releaseStore = {};
     saveStore();
-    saveReleaseStore();
+    closeSettingsModal();
     render();
   }
 });
@@ -2075,6 +2445,7 @@ function buildBackupObject(){
     version: 1,
     exportedAt: new Date().toISOString(),
     currency: currencySymbol,
+    numberFormat,
     store,
     releaseStore,
     customSets
@@ -2089,20 +2460,103 @@ function downloadBackupFile(){
   a.href = url; a.download = 'mtg_backup_'+ts+'.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  markBackupDone();
 }
 document.getElementById('backupBtn').addEventListener('click', downloadBackupFile);
+
+// ---- Backup reminder: the data only lives in this browser, so say how fresh the last backup is ----
+const BACKUP_STALE_DAYS = 30;
+function describeLastBackup(){
+  if(!lastBackupAt) return 'never';
+  const days = Math.floor((Date.now() - lastBackupAt) / 86400000);
+  if(days <= 0) return 'today';
+  if(days === 1) return 'yesterday';
+  return days + ' days ago';
+}
+function updateBackupStatus(){
+  const t = document.getElementById('lastBackupText');
+  if(t) t.textContent = describeLastBackup();
+  const b = document.getElementById('backupBtn');
+  if(b) b.title = 'Download a full backup of everything. Last backup: ' + describeLastBackup();
+}
+function hideBackupReminder(){
+  const el = document.getElementById('backupReminder');
+  if(el) el.classList.add('hidden');
+}
+function markBackupDone(){
+  lastBackupAt = Date.now();
+  try{ localStorage.setItem(LASTBACKUP_KEY, String(lastBackupAt)); }catch(e){ reportSaveError(); }
+  hideBackupReminder();
+  updateBackupStatus();
+}
+function checkBackupReminder(ownedCount){
+  if(backupReminderShown) return;
+  const hasData = ownedCount >= 3 || customSets.length > 0;
+  if(!hasData) return;
+  const ageDays = lastBackupAt ? (Date.now() - lastBackupAt) / 86400000 : Infinity;
+  if(ageDays < BACKUP_STALE_DAYS) return;
+  let snoozeUntil = 0;
+  try{ snoozeUntil = parseInt(localStorage.getItem(BACKUP_SNOOZE_KEY) || '0', 10) || 0; }catch(e){}
+  if(Date.now() < snoozeUntil) return;
+  backupReminderShown = true;
+  document.getElementById('backupReminderText').textContent = lastBackupAt
+    ? `Your last backup was ${describeLastBackup()}. Your collection only lives in this browser — a fresh backup file keeps it safe.`
+    : `You haven't made a backup yet. Your collection only lives in this browser — a backup file keeps it safe if the browser clears its data.`;
+  document.getElementById('backupReminder').classList.remove('hidden');
+  // Ask the browser to keep this site's data (some browsers decide silently, Firefox may ask once).
+  try{
+    if(!localStorage.getItem(PERSIST_ASKED_KEY) && navigator.storage && navigator.storage.persist){
+      localStorage.setItem(PERSIST_ASKED_KEY, '1');
+      navigator.storage.persist().catch(function(){});
+    }
+  }catch(e){}
+}
+document.getElementById('backupNowBtn').addEventListener('click', downloadBackupFile);
+document.getElementById('backupLaterBtn').addEventListener('click', ()=>{
+  try{ localStorage.setItem(BACKUP_SNOOZE_KEY, String(Date.now() + 7*86400000)); }catch(e){}
+  hideBackupReminder();
+});
+document.getElementById('settingsBackupBtn').addEventListener('click', downloadBackupFile);
+updateBackupStatus();
 
 document.getElementById('restoreBtn').addEventListener('click', ()=>{
   document.getElementById('restoreFile').click();
 });
 function isValidBackupObject(parsed){
-  return !!(parsed && typeof parsed === 'object' && ('store' in parsed));
+  if(!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+  if(!parsed.store || typeof parsed.store !== 'object' || Array.isArray(parsed.store)) return false;
+  // files made by this tool carry a schema tag; refuse files that claim to be something else
+  if(parsed.schema !== undefined && parsed.schema !== 'mtg-tracker-backup') return false;
+  return true;
+}
+// Keeps only well-formed custom sets so a hand-edited or damaged backup can't break the page.
+function sanitizeCustomSets(list){
+  if(!Array.isArray(list)) return [];
+  const builtinCodes = new Set(DATA.slice(0, BUILTIN_COUNT).map(([n])=>codeOf(n).toUpperCase()));
+  const seen = new Set();
+  const out = [];
+  list.forEach(cs=>{
+    if(!cs || typeof cs !== 'object') return;
+    if(typeof cs.code !== 'string' || !/^[A-Za-z0-9]{1,12}$/.test(cs.code)) return;
+    if(typeof cs.header !== 'string' || codeOf(cs.header) !== cs.code) return;
+    if(!Array.isArray(cs.items) || cs.items.length === 0 || !cs.items.every(i=> typeof i === 'string' && i.trim())) return;
+    const up = cs.code.toUpperCase();
+    if(builtinCodes.has(up) || seen.has(up)) return;
+    seen.add(up);
+    const m = cs.milestone;
+    const milestone = (m && typeof m === 'object' && typeof m.year === 'string' && typeof m.title === 'string' && typeof m.desc === 'string')
+      ? { year:m.year, title:m.title, desc:m.desc } : null;
+    out.push({ code: cs.code, header: cs.header, items: cs.items.slice(), milestone, group: (typeof cs.group === 'string' && cs.group) ? cs.group : null });
+  });
+  return out;
 }
 function applyBackup(parsed){
   store = (parsed.store && typeof parsed.store === 'object') ? parsed.store : {};
   releaseStore = (parsed.releaseStore && typeof parsed.releaseStore === 'object') ? parsed.releaseStore : {};
-  customSets = Array.isArray(parsed.customSets) ? parsed.customSets : [];
-  if(parsed.currency){ currencySymbol = parsed.currency; saveCurrency(); syncCurrencySelect(); }
+  customSets = sanitizeCustomSets(parsed.customSets);
+  if(parsed.currency){ currencySymbol = parsed.currency; saveCurrency(); }
+  if(parsed.numberFormat && NUMBER_FORMATS.indexOf(parsed.numberFormat) !== -1){ numberFormat = parsed.numberFormat; saveNumberFormat(); }
+  syncCurrencySelect();
   saveStore();
   saveReleaseStore();
   saveCustomSets();
@@ -2136,7 +2590,8 @@ document.getElementById('restoreFile').addEventListener('change', (e)=>{
 
 // ---- CSV export ----
 document.getElementById('exportBtn').addEventListener('click', ()=>{
-  let rows = [['Set','Code','Set Release Date','Product','Owned','Market Price (EUR)','Price Paid (EUR)','Date Bought']];
+  const cc = currencyCode();
+  let rows = [['Set','Code','Set Release Date','Product','Owned','Market Price ('+cc+')','Price Paid ('+cc+')','Date Bought']];
   DATA.forEach(([setName, items])=>{
     const titleText = titleOf(setName);
     const codeText = codeOf(setName);
@@ -2157,7 +2612,22 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 });
 
 // ---- CSV import ----
-function parseCSVLine(line){
+// Import is a two-step flow: parseCsvImport() reads the file WITHOUT touching any
+// saved data, the user then sees exactly what would change and confirms, and only
+// then applyCsvImport() writes it.
+function detectCsvDelimiter(headerLine){
+  // Excel in many European locales saves CSV with ';' instead of ','. Count each
+  // candidate outside of quoted text and pick the more frequent one.
+  let commas = 0, semis = 0, inQ = false;
+  for(let i=0;i<headerLine.length;i++){
+    const c = headerLine[i];
+    if(c === '"') inQ = !inQ;
+    else if(!inQ){ if(c === ',') commas++; else if(c === ';') semis++; }
+  }
+  return semis > commas ? ';' : ',';
+}
+function parseCSVLine(line, delim){
+  delim = delim || ',';
   const out = [];
   let cur = '', inQ = false;
   for(let i=0;i<line.length;i++){
@@ -2168,75 +2638,147 @@ function parseCSVLine(line){
       } else { cur += c; }
     } else {
       if(c === '"'){ inQ = true; }
-      else if(c === ','){ out.push(cur); cur=''; }
+      else if(c === delim){ out.push(cur); cur=''; }
       else { cur += c; }
     }
   }
   out.push(cur);
   return out;
 }
+// "4,50" / "1.234,56" / "1 234.56" / "12" -> "4.50" / "1234.56" / "1234.56" / "12".
+// Returns null for anything that is not a non-negative number.
+function normalizeCsvNumber(raw){
+  let s = String(raw == null ? '' : raw).replace(/[\s ]/g, '');
+  if(s === '') return '';
+  if(/^\d{1,3}(\.\d{3})+,\d+$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+  else if(/^\d+,\d+$/.test(s)) s = s.replace(',', '.');
+  else if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, '');
+  if(!/^\d+(\.\d+)?$/.test(s)) return null;
+  return s;
+}
+// ISO "2026-10-09" or day-first "9.10.2026" -> "2026-10-09". Returns null if unusable.
+function normalizeCsvDate(raw){
+  const s = String(raw == null ? '' : raw).trim();
+  if(s === '') return '';
+  let y, m, d, mt;
+  if((mt = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))){ y = mt[1]; m = mt[2]; d = mt[3]; }
+  else if((mt = s.match(/^(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4})$/))){ d = mt[1]; m = mt[2]; y = mt[3]; }
+  else return null;
+  const mi = parseInt(m, 10), di = parseInt(d, 10), yi = parseInt(y, 10);
+  if(mi < 1 || mi > 12 || di < 1 || di > 31) return null;
+  if(yi < 1993 || yi > new Date().getFullYear() + 3) return null;
+  return y + '-' + String(mi).padStart(2, '0') + '-' + String(di).padStart(2, '0');
+}
+function csvHeaderKey(h){
+  // lower-case, and drop a trailing "(EUR)" / "(USD)" / ... currency label
+  return String(h).trim().toLowerCase().replace(/\s*\([^)]*\)\s*$/, '');
+}
+function parseCsvImport(text){
+  if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  if(lines.length < 2) return { error: "That CSV looks empty or invalid." };
+  const delim = detectCsvDelimiter(lines[0]);
+  const header = parseCSVLine(lines[0], delim).map(csvHeaderKey);
+  const idxCode = header.indexOf('code');
+  const idxProduct = header.indexOf('product');
+  const idxOwned = header.indexOf('owned');
+  const idxMarket = header.indexOf('market price');
+  const idxPrice = (header.indexOf('price paid') !== -1) ? header.indexOf('price paid') : header.indexOf('price');
+  const idxBought = header.indexOf('date bought');
+  const idxRelease = header.indexOf('set release date');
+  if(idxCode === -1 || idxProduct === -1){
+    return { error: "This CSV doesn't look right (missing the Code / Product columns). Try exporting from this tool again and importing that file." };
+  }
+
+  const codeToItems = {};
+  DATA.forEach(([setName, items])=>{ codeToItems[codeOf(setName)] = items; });
+
+  const updates = [];
+  const releases = {};
+  let unmatched = 0, badValues = 0;
+  for(let i=1;i<lines.length;i++){
+    const cols = parseCSVLine(lines[i], delim);
+    const code = (cols[idxCode]||'').trim();
+    const product = (cols[idxProduct]||'').trim();
+    const items = codeToItems[code];
+    if(!items){ unmatched++; continue; }
+    const ii = items.indexOf(product);
+    if(ii === -1){ unmatched++; continue; }
+
+    // Only fields whose column exists in the file are touched; everything else
+    // (including the plan-to-buy star and link) is left exactly as it is.
+    const patch = {};
+    if(idxOwned >= 0) patch.owned = (cols[idxOwned]||'').trim().toUpperCase() === 'YES';
+    if(idxMarket >= 0){
+      const v = normalizeCsvNumber(cols[idxMarket]);
+      if(v === null){ badValues++; } else { patch.market = v; }
+    }
+    if(idxPrice >= 0){
+      const v = normalizeCsvNumber(cols[idxPrice]);
+      if(v === null){ badValues++; } else { patch.price = v; }
+    }
+    if(idxBought >= 0){
+      const v = normalizeCsvDate(cols[idxBought]);
+      if(v === null){ badValues++; } else { patch.date = v; }
+    }
+    if(idxRelease >= 0){
+      const rel = normalizeCsvDate(cols[idxRelease]);
+      if(rel === null){ badValues++; } else if(rel){ releases[code] = rel; }
+    }
+    updates.push({ id: 'p_'+code+'_'+ii, patch });
+  }
+
+  // How many packs would actually change?
+  let changed = 0;
+  updates.forEach(u=>{
+    const cur = getEntry(u.id);
+    if(Object.keys(u.patch).some(k=> String(cur[k]) !== String(u.patch[k]))) changed++;
+  });
+  const releaseChanges = Object.keys(releases).filter(c=> releaseStore[c] !== releases[c]).length;
+
+  return { updates, releases, unmatched, badValues, changed, releaseChanges, delim };
+}
+function applyCsvImport(parsed){
+  parsed.updates.forEach(u=>{
+    store[u.id] = Object.assign(getEntry(u.id), u.patch);
+  });
+  Object.keys(parsed.releases).forEach(code=>{ releaseStore[code] = parsed.releases[code]; });
+  saveStore();
+  saveReleaseStore();
+  render();
+}
 
 document.getElementById('importBtn').addEventListener('click', ()=>{
   document.getElementById('importFile').click();
 });
 document.getElementById('importFile').addEventListener('change', (e)=>{
-  const file = e.target.files[0];
+  const input = e.target;
+  const file = input.files[0];
   if(!file) return;
   const reader = new FileReader();
   reader.onload = (evt)=>{
-    let text = evt.target.result;
-    if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
-    if(lines.length < 2){ alert("That CSV looks empty or invalid."); return; }
-    const header = parseCSVLine(lines[0]).map(h=>h.trim().toLowerCase());
-    const idxKod = header.indexOf('code');
-    const idxProdukt = header.indexOf('product');
-    const idxVlastnim = header.indexOf('owned');
-    const idxMarket = header.indexOf('market price (eur)');
-    const idxCena = (header.indexOf('price paid (eur)') !== -1) ? header.indexOf('price paid (eur)') : header.indexOf('price (eur)');
-    const idxDatumNakupu = header.indexOf('date bought');
-    const idxRelease = header.indexOf('set release date');
-
-    if(idxKod === -1 || idxProdukt === -1){
-      alert("This CSV doesn't look right (missing the Code / Product columns). Try exporting from this tool again and importing that file.");
+    input.value = '';
+    const parsed = parseCsvImport(String(evt.target.result || ''));
+    if(parsed.error){ alert(parsed.error); return; }
+    if(parsed.updates.length === 0){
+      alert("None of the rows in this file match a pack in your list, so nothing was imported." +
+        (parsed.unmatched ? "\n\nIf the file contains sets you added on another device, restore a Backup (JSON) from that device first." : ""));
       return;
     }
-
-    // Build lookup: code -> item names (to validate the row actually matches a known pack)
-    const codeToItems = {};
-    DATA.forEach(([setName, items])=>{
-      const code = codeOf(setName);
-      codeToItems[code] = items;
-    });
-
-    let matched = 0, unmatched = 0;
-    for(let i=1;i<lines.length;i++){
-      const cols = parseCSVLine(lines[i]);
-      const code = (cols[idxKod]||'').trim();
-      const produkt = (cols[idxProdukt]||'').trim();
-      const items = codeToItems[code];
-      if(!items){ unmatched++; continue; }
-      const ii = items.indexOf(produkt);
-      if(ii === -1){ unmatched++; continue; }
-      const id = 'p_'+code+'_'+ii;
-      const vlastnim = idxVlastnim>=0 ? (cols[idxVlastnim]||'').trim().toUpperCase() === 'YES' : false;
-      const market = idxMarket>=0 ? (cols[idxMarket]||'').trim() : '';
-      const cena = idxCena>=0 ? (cols[idxCena]||'').trim() : '';
-      const datumNakupu = idxDatumNakupu>=0 ? (cols[idxDatumNakupu]||'').trim() : '';
-      store[id] = Object.assign(getEntry(id), { owned: vlastnim, price: cena, date: datumNakupu, market: market });
-      matched++;
-      if(idxRelease>=0){
-        const rel = (cols[idxRelease]||'').trim();
-        if(rel){ releaseStore[code] = rel; }
-      }
-    }
-    saveStore();
-    saveReleaseStore();
-    render();
-    alert(`Import done.\nItems imported: ${matched}\nRows not recognized: ${unmatched}`);
+    const lines = [
+      `Import "${file.name}"?`,
+      '',
+      `• ${parsed.updates.length} pack${parsed.updates.length===1?'':'s'} found in the file — ${parsed.changed} would change, ${parsed.updates.length - parsed.changed} already match.`
+    ];
+    if(parsed.releaseChanges) lines.push(`• ${parsed.releaseChanges} set release date${parsed.releaseChanges===1?'':'s'} would change.`);
+    if(parsed.unmatched) lines.push(`• ${parsed.unmatched} row${parsed.unmatched===1?'':'s'} don't match any pack here and will be skipped (sets you added on another device need Backup / Restore (JSON)).`);
+    if(parsed.badValues) lines.push(`• ${parsed.badValues} value${parsed.badValues===1?'':'s'} couldn't be read (not a number / date) and will be left as they are.`);
+    lines.push('', 'Ownership, prices and dates from the file replace what you have saved for those packs. Your plan-to-buy list is not touched.', 'Tip: click Backup (JSON) first if you want an easy way back.');
+    if(!confirm(lines.join('\n'))) return;
+    applyCsvImport(parsed);
+    alert(`Import done — ${parsed.updates.length} pack${parsed.updates.length===1?'':'s'} processed, ${parsed.changed} changed.`);
   };
   reader.readAsText(file, 'utf-8');
-  e.target.value = '';
 });
 
 render();
