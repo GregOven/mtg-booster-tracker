@@ -67,7 +67,7 @@
   --line-2: rgba(220, 215, 225, .17);
   --text: #ece9ee;
   --text-2: #a8a3ac;
-  --text-3: #75707a;
+  --text-3: #8e8994;  /* ≥4.5:1 on bg, surface and surface-2 (WCAG AA) */
   --accent: var(--mana-u);
   --accent-hi: #86c0f0;
   --accent-soft: rgba(90, 167, 230, .14);
@@ -109,7 +109,7 @@
     --line-2: rgba(40, 30, 20, .17);
     --text: #17151a;
     --text-2: #56515a;
-    --text-3: #847e88;
+    --text-3: #69636e;  /* ≥4.5:1 on all light surfaces */
     --accent-hi: #0a568f;
     --accent-soft: rgba(14, 104, 171, .09);
     --accent-line: rgba(14, 104, 171, .35);
@@ -119,7 +119,7 @@
     --neg-soft: rgba(211, 32, 42, .07);
     --neg-line: rgba(211, 32, 42, .3);
     --wish-stroke: #a8913a;
-    --gold: #9a7417;
+    --gold: #7d5e0e;  /* ≥4.5:1 for the gold milestone label on its tint */
     --gold-soft: rgba(154, 116, 23, .10);
     --gold-line: rgba(154, 116, 23, .6);
     --scrim: rgba(25, 20, 15, .38);
@@ -250,6 +250,13 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .stat-value.is-empty { color: var(--text-3); font-weight: var(--w-regular); }
 .stat-note { font-size: var(--fs-1); color: var(--text-3); margin-top: 4px; line-height: var(--lh-snug); }
 .stat-note b { color: var(--text-2); font-weight: var(--w-medium); }
+.stat-value.is-partial { color: var(--text-2); }
+.stat-flag { margin-left: auto; font: var(--w-medium) 11px/1 var(--font-sans); font-variant-numeric: tabular-nums; color: var(--text-2); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-2); padding: 3px 6px; border-radius: var(--r-full); letter-spacing: 0; white-space: nowrap; }
+.stat-sub { font-size: var(--fs-1); color: var(--text-2); margin-top: 2px; line-height: var(--lh-snug); }
+.stat-sub b { color: var(--text); font-weight: var(--w-medium); }
+.stats-toggle { display: none; }
+.m-only, .lbl-short { display: none; }
+.stat-sub .meter { display: inline-block; vertical-align: middle; width: 40px; margin-left: 4px; }
 
 /* ==========================================================================
    Notices
@@ -338,6 +345,8 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
    ========================================================================== */
 .list-head { display: none; }
 .list { display: block; }
+/* Off-screen sets skip style and layout work until they scroll near the viewport (big lists, slow phones). */
+.list > .set, .list > .flat-list { content-visibility: auto; contain-intrinsic-size: auto 220px; }
 .loading { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); padding: var(--sp-10) 0; color: var(--text-2); font-size: var(--fs-3); }
 .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--accent); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -412,6 +421,9 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .set-meta .sep { color: var(--text-3); }
 .code { font: var(--w-medium) 11px/1 var(--font-sans); letter-spacing: .06em; color: var(--text-2); padding: 3px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line-2); text-transform: uppercase; }
 .tag { font: var(--w-medium) 11px/1 var(--font-sans); color: var(--accent); padding: 3px 6px; border-radius: 4px; background: var(--accent-soft); }
+.tag-note { color: var(--gold); background: var(--gold-soft); display: inline-flex; gap: 3px; align-items: center; }
+.tag-note .i { width: 12px; height: 12px; fill: currentColor; stroke-width: 1; }
+.note-match { color: var(--gold); }
 .tag-warn { color: var(--neg); background: var(--neg-soft); display: inline-flex; gap: 3px; align-items: center; }
 .set-prog { display: flex; flex-direction: row; align-items: center; gap: var(--sp-2); flex: none; }
 .set-prog-txt { min-width: 2.4em; text-align: right; }
@@ -550,6 +562,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .check-row { display: flex; gap: var(--sp-3); align-items: flex-start; text-align: left; width: 100%; padding: var(--sp-2); border-radius: var(--r-2); min-height: var(--tap); font-size: var(--fs-2); color: var(--text-2); }
 .check-row:hover { background: var(--hover); }
 .check-row .flag { margin-top: 1px; }
+.flag.is-info { background: var(--accent-soft); color: var(--accent); }
 .check-row b { color: var(--text); font-weight: var(--w-medium); display: block; font-size: var(--fs-3); }
 
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px var(--sp-4); font-size: var(--fs-2); }
@@ -559,6 +572,8 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 /* to buy list */
 .tb-row { display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) auto; align-items: center; gap: 0 var(--sp-2); border-top: 1px solid var(--line); padding: 0 var(--sp-2) 0 var(--sp-1); }
 .tb-row:first-child { border-top: 0; }
+.tb-row.is-removed .tb-name, .tb-row.is-removed .tb-val { color: var(--text-3); }
+.tb-removed { color: var(--text-2); font-weight: var(--w-medium); }
 .tb-main { text-align: left; padding: var(--sp-3) 0; min-width: 0; min-height: 56px; }
 .tb-name { font-weight: var(--w-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tb-set { font-size: var(--fs-2); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -655,6 +670,8 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 .field-msg { font-size: var(--fs-2); line-height: var(--lh-snug); color: var(--text-3); }
 .field-msg.is-error { color: var(--neg); display: flex; gap: 6px; align-items: flex-start; }
 .field-msg.is-error .i { width: 16px; height: 16px; margin-top: 1px; }
+.field-warn { display: flex; gap: 6px; align-items: flex-start; color: var(--text); }
+.field-warn .i { color: var(--accent); margin-top: 1px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 
 .stepper { display: inline-flex; align-items: center; border-radius: var(--r-2); box-shadow: inset 0 0 0 1px var(--line-2); background: var(--bg); }
@@ -664,7 +681,7 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 .stepper input { width: 3.2em; height: var(--tap); text-align: center; border: 0; background: transparent; font-size: 16px; font-weight: var(--w-semi); font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .qty-line { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
-.qty-state { font-size: var(--fs-2); color: var(--text-2); }
+.qty-state { font-size: var(--fs-2); color: var(--text-2); flex: 1 1 160px; min-width: 0; }
 
 .switch-row { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); cursor: pointer; }
 .switch-row .switch-text { flex: 1; }
@@ -734,7 +751,7 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
   font-size: var(--fs-2); line-height: var(--lh-snug);
   animation: toast-in var(--dur-2) var(--ease);
 }
-@media (prefers-color-scheme: light) { .toast { background: #1c232d; color: #eef2f7; } .toast .btn-ghost { color: #aebfff; } }
+@media (prefers-color-scheme: light) { .toast { background: #1c232d; color: #eef2f7; } .toast .btn.btn-ghost { color: #aebfff; } }
 .toast.is-out { opacity: 0; transform: translateY(6px); transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
 .toast-text { flex: 1; padding: var(--sp-2) 0; }
 .toast .btn { min-height: 40px; color: var(--accent-hi); font-weight: var(--w-semi); }
@@ -774,6 +791,44 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
   .stat-value { font-size: 18px; }
   .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .calc-v { font-size: var(--fs-3); }
+}
+
+/* Mobile: compact header so the first packs are visible without scrolling (summary details on demand) */
+@media (max-width: 719px) {
+  body:not([data-tab="collection"]) #stats, body:not([data-tab="collection"]) #progress, body:not(.stats-open) #progress { display: none !important; }
+  .m-only { display: inline; }
+  .lbl-short { display: inline; } .lbl-long, .sub-long { display: none; }
+  .stats { margin: var(--sp-3) 0 var(--sp-2); }
+  .stat { min-height: 0; padding: var(--sp-2) var(--sp-3); }
+  .stat-value { font-size: var(--fs-4); margin-top: 2px; }
+  .stats:not(.is-open) .stat-note { display: none; }
+  .stats-toggle { display: flex; grid-column: 1 / -1; align-items: center; justify-content: center; gap: 6px; min-height: 40px; background: var(--surface); color: var(--accent); font-size: var(--fs-2); font-weight: var(--w-medium); }
+  .stats-toggle .i { transition: transform var(--dur-2) var(--ease); }
+  .stats.is-open .stats-toggle .i { transform: rotate(180deg); }
+  .progress { padding: var(--sp-2) var(--sp-3) var(--sp-3); margin-bottom: var(--sp-2); }
+  .progress-pct { font-size: var(--fs-4); }
+  .progress-top { gap: 0 var(--sp-2); }
+  .progress-mood, .pl-extra, .progress-scale, .progress-ticks { display: none; }
+  .progress-bar { height: 6px; margin-top: var(--sp-2); }
+  .notice.is-backup { padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3); align-items: center; }
+  .notice.is-backup .notice-long { display: none; }
+  .notice.is-backup .notice-body { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-2); }
+  .notice.is-backup .notice-body { flex-wrap: nowrap; }
+  .notice.is-backup .notice-title { flex: 1 1 auto; min-width: 0; margin: 0; font-size: var(--fs-2); }
+  .notice.is-backup .notice-actions { flex-wrap: nowrap; gap: var(--sp-1); }
+  .notice.is-backup .notice-actions { margin: 0; }
+  /* two toolbar rows instead of three: [search][expand][add] / [sort][filter chips →] */
+  .toolbar { margin-top: 0; grid-template-columns: 9.5em minmax(0, 1fr) auto auto; grid-template-areas: "search search tog add" "sort chips chips chips"; align-items: center; column-gap: var(--sp-2); }
+  .toolbar > .search { grid-area: search; }
+  .toolbar-row, .toolbar-end { display: contents; }
+  .toolbar-end .select { grid-area: sort; }
+  .toolbar-end .select select { padding: 0 28px 0 var(--sp-3); }
+  .toolbar-end .select > .i { right: 8px; }
+  .group-head { min-height: 48px; }
+  #toggle-all { grid-area: tog; }
+  .toolbar-end [data-action="add-set"] { grid-area: add; width: var(--tap); padding: 0; }
+  .toolbar-end [data-action="add-set"] span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .chips { grid-area: chips; margin: 0 calc(-1 * var(--sp-4)) 0 0; padding: 2px var(--sp-4) 2px 0; scroll-padding: 0; }
 }
 
 /* Mobile dialogs become bottom sheets */
@@ -881,9 +936,6 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 .dlg-notes .dlg-head, .dlg-notes .dlg-foot { border-color: var(--gold-line); }
 .dlg-notes .btn-primary { background: var(--gold); color: #1b1608; }
 .dlg-notes .btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--gold) 86%, #fff); }
-.dlg-notes .dlg-head .icon-btn { box-shadow: inset 0 0 0 1.5px var(--neg); color: var(--neg); }
-.dlg-notes .dlg-head .icon-btn:hover { background: var(--neg-soft); color: var(--neg); }
-.dlg-notes .dlg-head .icon-btn:focus-visible { box-shadow: inset 0 0 0 1.5px var(--neg), 0 0 0 2px var(--surface), 0 0 0 4px var(--neg-line); }
 .note + .note { border-top: 1px solid var(--line); padding-top: var(--sp-5); }
 .note-title { display: flex; gap: var(--sp-2); align-items: flex-start; font-family: var(--font-serif); font-size: var(--fs-4); font-weight: var(--w-semi); line-height: var(--lh-snug); margin: 0 0 var(--sp-2); }
 .note-title .i { color: var(--gold); fill: var(--gold); stroke-width: 1; width: 18px; height: 18px; margin-top: 2px; flex: none; }
@@ -929,7 +981,7 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
     <div class="toolbar">
       <div class="search">
         <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
-        <input id="q" type="search" placeholder="Search sets, packs, codes" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search">
+        <input id="q" type="search" placeholder="Search sets, packs, codes, milestones" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search">
         <kbd class="kbd" aria-hidden="true">/</kbd>
         <button class="icon-btn search-clear" data-action="clear-search" type="button" aria-label="Clear search" hidden><svg class="i"><use href="#i-x"/></svg></button>
       </div>
@@ -1022,7 +1074,7 @@ const MILESTONES = {"LEA":[{"title":"The first booster packs","text":"Limited Ed
 const APP = { name: 'MTG Booster Collector Tracker', version: '1.0.0', key: 'packledger.v1', backupFormat: 'pack-ledger-backup', schema: 1 };
 const MIN_YEAR = 1993;
 const RELEASE_YEARS_AHEAD = 3;
-const EARLY_PURCHASE_DAYS = 14;
+const EARLY_PURCHASE_DAYS = 60; // pre-orders 4–8 weeks ahead are normal; beyond that the year is probably a typo
 const BACKUP_REMIND_DAYS = 30;
 const FLAT_PAGE = 200;
 
@@ -1154,26 +1206,61 @@ function relAge(iso, long) {
 function inputMoney(v) { return v == null ? '' : F.dec.format(v); }
 
 /* ----------------------------------------------------------------------------- money parsing */
+/**
+ * Strict price parser. Accepts only a plain amount with an optional currency
+ * symbol or code before or after it, e.g. 4.50 · 4,50 € · € 1 234,56 · 1.234,50 · 12 EUR.
+ * Anything else (dates, ranges, letters, exponents, 3+ decimals) is rejected
+ * instead of being squeezed into a number.
+ */
+const CURRENCY_TOKEN = /^(?:€|\$|£|¥|CA\$|A\$|EUR|USD|GBP|CHF|CZK|PLN|HUF|SEK|NOK|DKK|CAD|AUD|JPY|Kč|Kc|zł|zl|Ft|kr|,-|\.-)$/i;
 function parseMoney(raw, decimalHint) {
-  let s = String(raw == null ? '' : raw).trim();
-  if (!s) return { ok: true, value: null };
-  if (/^-|−/.test(s.replace(/[^\d\-−]/g, '').charAt(0)) || /^[^\d]*[-−]/.test(s)) return { ok: false, reason: 'Prices can’t be negative.' };
-  s = s.replace(/[\s\u00a0\u202f'’]/g, '').replace(/[^\d.,]/g, '');
-  if (!/\d/.test(s)) return { ok: false, reason: `“${String(raw).trim()}” isn’t a number. Use something like 4${decimalHint === ',' ? ',' : '.'}50.` };
-  const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
-  let dec = null;
-  if (lc > -1 && ld > -1) dec = lc > ld ? ',' : '.';
-  else if (lc > -1) dec = (/^\d{1,3}(,\d{3})+$/.test(s) && decimalHint !== ',') ? null : ',';
-  else if (ld > -1) dec = (/^\d{1,3}(\.\d{3})+$/.test(s) && decimalHint === ',') ? null : '.';
-  let t = s;
-  if (dec === ',') t = s.replace(/\./g, '').replace(',', '.');
-  else if (dec === '.') t = s.replace(/,/g, '');
-  else t = s.replace(/[.,]/g, '');
-  if (!/^\d+(\.\d+)?$/.test(t)) return { ok: false, reason: `“${String(raw).trim()}” isn’t a number. Use something like 4${decimalHint === ',' ? ',' : '.'}50.` };
-  const v = Math.round(parseFloat(t) * 100) / 100;
-  if (!isFinite(v)) return { ok: false, reason: 'That number is too large.' };
-  if (v > 10000000) return { ok: false, reason: 'That number is too large.' };
+  const orig = String(raw == null ? '' : raw).trim();
+  if (!orig) return { ok: true, value: null };
+  const ex = `4${decimalHint === ',' ? ',' : '.'}50`;
+  const notPrice = (why) => ({ ok: false, reason: why ? `“${orig}” isn’t a price: ${why}.` : `“${orig}” isn’t a price. Use something like ${ex}.` });
+  let s = orig.replace(/[   ]/g, ' ');
+  // peel off one currency token at the start and/or the end
+  const lead = s.match(/^(€|\$|£|¥|CA\$|A\$|[A-Za-zčłČŁ]{2,3})\s*/);
+  if (lead && CURRENCY_TOKEN.test(lead[1])) s = s.slice(lead[0].length);
+  const trail = s.match(/\s*(€|\$|£|¥|[A-Za-zčłČŁ]{2,3}|,-|\.-)$/);
+  if (trail && CURRENCY_TOKEN.test(trail[1])) s = s.slice(0, s.length - trail[0].length);
+  s = s.trim();
+  if (/^[-−]/.test(s)) return { ok: false, reason: 'Prices can’t be negative.' };
+  if (!/\d/.test(s)) return notPrice();
+  if (/[^\d .,'’]/.test(s)) return notPrice(/[-−/]/.test(s) ? 'looks like a date or a range' : 'contains letters or symbols');
+  if (!/^\d/.test(s) || !/\d$/.test(s)) return notPrice();
+  // split into digit groups and the separators between them
+  const groups = s.split(/[ .,'’]/);
+  const seps = s.match(/[ .,'’]/g) || [];
+  if (groups.some((g) => g === '')) return notPrice('two separators in a row');
+  let intGroups = groups, decimals = '';
+  const lastSep = seps[seps.length - 1];
+  const tail = groups[groups.length - 1];
+  if (lastSep === '.' || lastSep === ',') {
+    // "1,234" (comma not the decimal mark) or "1.234.567" = thousands; otherwise the last separator is the decimal mark
+    const thousandsOnly = seps.every((x) => x === lastSep) && tail.length === 3 && (lastSep !== decimalHint || seps.length > 1);
+    if (!thousandsOnly) {
+      if (tail.length > 2) return notPrice(tail.length === 3 && seps.length === 1 && /^[1-9]/.test(groups[0]) ? `at most 2 decimals — write ${groups.join('')} for a whole number` : 'at most 2 decimals');
+      decimals = tail; intGroups = groups.slice(0, -1);
+    }
+  }
+  const intSeps = decimals ? seps.slice(0, -1) : seps;
+  if (intGroups.length > 1) {
+    // thousands grouping: one kind of separator (not the decimal one), groups of exactly 3, no leading zero
+    const tsep = intSeps[0];
+    if (!intSeps.every((x) => x === tsep) || (decimals && tsep === lastSep)) return notPrice('mixed separators');
+    if (!/^[1-9]\d{0,2}$/.test(intGroups[0]) || intGroups.slice(1).some((g) => g.length !== 3)) return notPrice('digit groups don’t look like thousands');
+  }
+  const v = Math.round(parseFloat(intGroups.join('') + (decimals ? '.' + decimals : '')) * 100) / 100;
+  if (!isFinite(v) || v > 10000000) return { ok: false, reason: 'That number is too large.' };
   return { ok: true, value: v };
+}
+/** Soft check for prices that are valid numbers but probably typos (wrong decimal mark, extra digits). */
+function priceWarning(v, market) {
+  if (v == null) return null;
+  if (market != null && market > 0 && v > market * 10) return `${money(v)} is more than 10× the market value (${money(market)}) — check the decimal mark.`;
+  if (v >= 1000 && (market == null || v > market * 2)) return `${money(v)} is unusually high for a booster — check the decimal mark.`;
+  return null;
 }
 function safeUrl(raw) {
   let s = String(raw == null ? '' : raw).trim();
@@ -1338,7 +1425,7 @@ function dataChecks(data, setsById) {
     if (e.qty === 0 && e.paid != null) out.push({ kind: 'paid-not-owned', packId: p.id, title: 'Price paid, but not marked as owned', text: `${money(e.paid)} is recorded but not counted in Total spent.` });
     if (e.qty > 0 && e.date && s.release) {
       const d = daysBetween(e.date, s.release);
-      if (d > EARLY_PURCHASE_DAYS) out.push({ kind: 'early', packId: p.id, title: `Bought ${d} days before release`, text: `Purchase ${fmtDate(e.date)}, set released ${fmtDate(s.release)}. Pre-orders are normal; ${d} days early may be a typo in the year.` });
+      if (d > EARLY_PURCHASE_DAYS) out.push({ kind: 'early', level: 'info', packId: p.id, title: `Bought ${d} days before release`, text: `Purchase ${fmtDate(e.date)}, set released ${fmtDate(s.release)}. That’s earlier than a usual pre-order — check the year.` });
     }
   }
   const byCode = new Map();
@@ -1405,14 +1492,22 @@ function placement(data, draft) {
     for (const p of data.packs) {
       if (p.setId !== draft.id) continue;
       const e = entryOf(data, p.id);
-      if (e.qty > 0 && e.date && daysBetween(e.date, draft.release) > EARLY_PURCHASE_DAYS) res.warnings.push(`${p.name} was bought on ${fmtDate(e.date)}, ${daysBetween(e.date, draft.release)} days before this release date.`);
+      if (e.qty > 0 && e.date && daysBetween(e.date, draft.release) > EARLY_PURCHASE_DAYS) res.infos.push(`${p.name} was bought on ${fmtDate(e.date)}, ${daysBetween(e.date, draft.release)} days before this release date.`);
     }
   }
   return res;
 }
 
 /** Short pack label inside its set: "Avatar The Last Airbender Collector Booster Pack" → "Collector Booster". */
+const _shortNames = new Map();
+/** Memoized: the same labels are rebuilt on every render. */
 function shortName(product, setName) {
+  const k = product + '\u0000' + setName;
+  let v = _shortNames.get(k);
+  if (v === undefined) { v = shortNameRaw(product, setName); if (_shortNames.size > 5000) _shortNames.clear(); _shortNames.set(k, v); }
+  return v;
+}
+function shortNameRaw(product, setName) {
   const words = String(product).split(/\s+/).filter(Boolean);
   const pn = words.map(norm);
   const sw = norm(setName).split(' ').filter(Boolean);
@@ -1564,7 +1659,7 @@ function planCsvImport(data, text) {
   text = String(text).replace(/^\uFEFF/, '');
   const delim = detectDelimiter(text);
   const rows = parseCSV(text, delim);
-  const plan = { delim, decimalComma: false, currency: null, rows: rows.length ? rows.length - 1 : 0, added: [], changed: [], unchanged: 0, ignored: [], notes: [], ops: [], newSets: [], error: null };
+  const plan = { delim, decimalComma: false, currency: null, rows: rows.length ? rows.length - 1 : 0, added: [], changed: [], unchanged: 0, ignored: [], notes: [], warnings: [], ops: [], newSets: [], error: null };
   if (rows.length < 2) { plan.error = rows.length ? 'The file has a header row but no data rows.' : 'The file is empty.'; return plan; }
   const { map, currency } = mapHeader(rows[0]);
   plan.currency = currency;
@@ -1630,10 +1725,11 @@ function planCsvImport(data, text) {
       if (m.ok) e[k] = k === 'market' && m.value === 0 ? null : m.value; else lineNotes.push(`${k === 'paid' ? 'price paid' : 'market value'} “${v}”`);
     }
     const dv = get(r, 'date');
-    if (dv !== undefined) { const c = checkDate(parseLooseDate(dv), 'purchase'); if (c.ok) e.date = c.value; else lineNotes.push(`date “${dv}” (${c.reason})`); }
+    if (dv !== undefined) { const c = checkDate(parseLooseDate(dv), 'purchase'); if (c.ok) e.date = c.value; else lineNotes.push(`date “${dv}”`); }
     const tb = get(r, 'toBuy'); if (tb !== undefined) { const b = parseBool(tb); if (b !== null) e.toBuy = b; }
     const u = get(r, 'url'); if (u !== undefined) { const c = safeUrl(u); if (c.ok) e.url = c.value; else lineNotes.push(`link “${u}”`); }
-    if (lineNotes.length) plan.notes.push(`Line ${line}: kept the previous ${lineNotes.join(', ')} — not valid.`);
+    if (lineNotes.length) plan.warnings.push(`Line ${line} · ${product}: ${lineNotes.join(', ')} ${lineNotes.length === 1 ? 'isn’t' : 'aren’t'} valid, so the current ${lineNotes.length === 1 ? 'value stays' : 'values stay'}.`);
+    if (e.paid != null && e.paid !== before.paid) { const pw = priceWarning(e.paid, e.market); if (pw) plan.warnings.push(`Line ${line} · ${product}: price paid ${pw}`); }
     working.set(p.id, e);
     if (isNew) plan.added.push({ line, pack: p, set: s, e });
   });
@@ -1683,7 +1779,7 @@ function buildCsv(data, fmt) {
 const store = {
   data: null,
   rev: 0,
-  view: { tab: 'collection', q: '', filter: 'all', sort: 'newest', pinned: new Set(), tmpClosed: {}, flatLimit: FLAT_PAGE, insightMode: 'spent' },
+  view: { tab: 'collection', q: '', filter: 'all', sort: 'newest', pinned: new Set(), tmpClosed: {}, flatLimit: FLAT_PAGE, insightMode: 'spent', statsOpen: false },
   saveError: null, lastSavedAt: null, corrupt: null, storageBlocked: false,
   bootProblems: [], persist: { supported: false, persisted: false, asked: false },
 };
@@ -1751,6 +1847,7 @@ function render() {
   renderNotices();
   renderTabs();
   const tab = store.view.tab;
+  document.body.dataset.tab = tab;
   $('#view-collection').hidden = tab !== 'collection';
   $('#view-tobuy').hidden = tab !== 'tobuy';
   $('#view-insights').hidden = tab !== 'insights';
@@ -1777,26 +1874,57 @@ function renderStats() {
   const s = idx().summary;
   const own = s.owned;
   const ownedNote = `of ${fmtInt(s.catalogPacks)} packs${s.copies !== own ? ` · ${fmtInt(s.copies)} copies` : ''}`;
-  const cov = (n) => (own === 0 ? '' : n === own ? `all ${fmtInt(own)} owned ${plural(own, 'pack')}` : `<b>${fmtInt(n)}</b> of ${fmtInt(own)} owned ${plural(own, 'pack')}`);
-  const spent = own === 0 ? stat('Spent', '—', 'Tick packs you own to see totals', true)
-    : s.spent.covered === 0 ? stat('Spent', '—', 'No owned pack has a price paid yet', true)
-    : stat('Spent', moneyC(s.spent.c), `${cov(s.spent.covered)} ${s.spent.covered === own ? 'have a price' : 'have a price paid'}`);
-  const value = own === 0 ? stat('Value', '—', 'Market value of packs you own', true)
-    : s.value.covered === 0 ? stat('Value', '—', 'No owned pack has a market value yet', true)
-    : stat('Value', moneyC(s.value.c), `${cov(s.value.covered)} ${s.value.covered === own ? 'have a value' : 'have a market value'}`);
+  const cov = (n) => (n === own ? `all ${fmtInt(own)} owned ${plural(own, 'pack')}` : `<b>${fmtInt(n)}</b> of ${fmtInt(own)} owned ${plural(own, 'pack')}`);
+  // Coverage badge next to the label whenever a total is based on only part of the owned packs.
+  const flag = (n) => (own > 0 && n > 0 && n < own ? `${fmtInt(n)}/${fmtInt(own)}` : null);
+
+  let spent;
+  if (own === 0) spent = stat({ label: 'Spent', note: 'Tick packs you own to see totals' });
+  else if (s.spent.covered === 0) spent = stat({ label: 'Spent', note: 'No owned pack has a price paid yet' });
+  else spent = stat({ label: 'Spent', value: esc(moneyC(s.spent.c)), flag: flag(s.spent.covered), note: `${cov(s.spent.covered)} ${s.spent.covered === own ? 'have a price' : 'have a price paid'}` });
+
+  // Value is shown next to what was paid for exactly the same packs, so it is never read against Spent,
+  // which usually covers many more packs.
+  let value;
+  if (own === 0) value = stat({ label: 'Value', note: 'Market value of packs you own' });
+  else if (s.value.covered === 0) value = stat({ label: 'Value', note: 'No owned pack has a market value yet' });
+  else {
+    const n = s.value.covered, g = s.gain;
+    let sub = '';
+    if (g.covered === n) sub = `vs <b>${esc(moneyC(g.basisC))}</b> paid<span class="sub-long"> for ${n === 1 ? 'it' : `these ${fmtInt(n)}`}</span>`;
+    else if (g.covered > 0) sub = `vs <b>${esc(moneyC(g.basisC))}</b> paid<span class="sub-long"> for ${fmtInt(g.covered)} of these ${fmtInt(n)}</span>`;
+    else sub = 'none of these has a price paid';
+    value = stat({ label: 'Value', value: esc(moneyC(s.value.c)), flag: flag(n), sub, note: `${cov(n)} ${n === own ? 'have a value' : 'have a market value'}` });
+  }
+
   let gain;
-  if (s.gain.covered === 0) gain = stat('Gain / loss', '—', own === 0 ? 'Compares price paid with market value' : 'Needs owned packs with both a price paid and a market value', true);
+  if (s.gain.covered === 0) gain = stat({ label: 'Gain / loss', note: own === 0 ? 'Compares price paid with market value' : 'Needs owned packs with both a price paid and a market value' });
   else {
     const c = s.gain.c, cls = c > 0 ? 'pos' : c < 0 ? 'neg' : '';
     const pct = s.gain.pct != null ? `${c > 0 ? '+' : c < 0 ? '−' : ''}${F.pct.format(Math.abs(s.gain.pct))} ` : '';
-    gain = stat('Gain / loss', `${c !== 0 ? `<span class="${cls}" style="display:inline-flex;align-items:center;gap:4px">${c > 0 ? '<svg class="i" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>' : '<svg class="i" aria-hidden="true"><use href="#i-chev"/></svg>'}${moneyC(c, { signed: true })}</span>` : moneyC(0)}`,
-      `${pct}on ${s.gain.covered === own ? `all ${fmtInt(own)}` : `<b>${fmtInt(s.gain.covered)}</b>`} ${plural(s.gain.covered, 'pack')} with both prices`, false, true);
+    const arrow = c > 0 ? '<svg class="i" aria-hidden="true" style="transform:rotate(180deg)"><use href="#i-chev"/></svg>' : '<svg class="i" aria-hidden="true"><use href="#i-chev"/></svg>';
+    gain = stat({
+      label: 'Gain / loss', flag: flag(s.gain.covered),
+      value: c !== 0 ? `<span class="${cls}" style="display:inline-flex;align-items:center;gap:4px">${arrow}${esc(moneyC(c, { signed: true }))}</span>` : esc(moneyC(0)),
+      note: `${pct}on ${s.gain.covered === own ? `all ${fmtInt(own)}` : `<b>${fmtInt(s.gain.covered)}</b>`} ${plural(s.gain.covered, 'pack')} with both prices`,
+    });
   }
-  $('#stats').innerHTML = stat('Owned', fmtInt(own), ownedNote) + spent + value + gain;
-  $$('[data-count="tobuy"]').forEach((el) => { el.textContent = s.toBuy.count ? fmtInt(s.toBuy.count) : ''; });
+  const open = store.view.statsOpen;
+  const el = $('#stats');
+  el.classList.toggle('is-open', open);
+  document.body.classList.toggle('stats-open', open);
+  const ci = completionInfo(store.data, idx());
+  const ownedSub = ci.total ? `<span class="m-only">${ci.pct} % complete <span class="meter" aria-hidden="true"><i class="comp-fill${ci.owned === ci.total ? ' is-full' : ''}" style="width:${ci.pctExact.toFixed(1)}%;--p:${ci.pctExact.toFixed(1)}%"></i></span></span>` : '';
+  el.innerHTML = stat({ label: 'Owned', value: fmtInt(own), note: ownedNote, sub: ownedSub }) + spent + value + gain +
+    `<button class="stats-toggle" type="button" data-action="toggle-stats" aria-expanded="${open}">${open ? 'Hide details' : 'Show details'}${icon('chev', 'i-sm')}</button>`;
+  if (!renderStats.counts) renderStats.counts = $$('.tabs [data-count="tobuy"], .tabbar [data-count="tobuy"]');
+  renderStats.counts.forEach((x) => { x.textContent = s.toBuy.count ? fmtInt(s.toBuy.count) : ''; });
 }
-function stat(label, value, note, empty, raw) {
-  return `<div class="stat"><div class="stat-label">${esc(label)}</div><div class="stat-value num${empty ? ' is-empty' : ''}">${raw ? value : esc(value)}</div><div class="stat-note">${note}</div></div>`;
+/** One summary tile. value/note/sub are HTML (callers escape); a missing value renders as an empty dash. */
+function stat({ label, value, note, sub, flag }) {
+  const empty = value == null;
+  return `<div class="stat"><div class="stat-label">${esc(label)}${flag ? `<span class="stat-flag" title="Based on ${esc(flag)} owned packs"><span class="sr">based on </span>${esc(flag)}<span class="sr"> owned packs</span></span>` : ''}</div>
+    <div class="stat-value num${empty ? ' is-empty' : ''}${flag ? ' is-partial' : ''}">${empty ? '—' : value}</div>${sub ? `<div class="stat-sub num">${sub}</div>` : ''}<div class="stat-note">${note}</div></div>`;
 }
 
 /* ---------- collection progress (motivation) */
@@ -1823,10 +1951,10 @@ function renderProgress() {
     const next = [10, 25, 50, 75, 90, 100].find((m) => m > c.pctExact) || 100;
     const need = Math.max(1, Math.ceil((next / 100) * c.total - 1e-9) - c.owned);
     const mood = c.pctExact < 10 ? 'A good start.' : c.pctExact < 25 ? 'Off and running.' : c.pctExact < 50 ? 'Building momentum.' : c.pctExact < 75 ? 'More than halfway.' : c.pctExact < 90 ? 'The finish line is in sight.' : 'Almost there.';
-    msg = `${mood} <b>${fmtInt(need)} more ${plural(need, 'pack')}</b> to reach ${next === 100 ? 'a complete collection' : next + ' %'}.`;
+    msg = `<span class="progress-mood">${mood} </span><b>${fmtInt(need)} more ${plural(need, 'pack')}</b> to reach ${next === 100 ? 'a complete collection' : next + ' %'}.`;
   }
   const done = c.owned === c.total;
-  const html = `<div class="progress-top"><span class="progress-pct">${c.pct} %</span><span class="progress-label">complete · ${fmtInt(c.owned)} of ${fmtInt(c.total)} packs${c.completeSets ? ` · ${fmtInt(c.completeSets)} complete ${plural(c.completeSets, 'set')}` : ''}</span><span class="progress-msg">${msg}</span></div>
+  const html = `<div class="progress-top"><span class="progress-pct">${c.pct} %</span><span class="progress-label">complete · ${fmtInt(c.owned)} of ${fmtInt(c.total)} packs${c.completeSets ? `<span class="pl-extra"> · ${fmtInt(c.completeSets)} complete ${plural(c.completeSets, 'set')}</span>` : ''}</span><span class="progress-msg">${msg}</span></div>
     <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${c.pct}" aria-label="Collection ${c.pct} % complete"><i class="comp-fill${done ? ' is-full' : ''}" style="width:${c.pctExact.toFixed(2)}%;--p:${c.pctExact.toFixed(1)}%"></i><span class="progress-ticks" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span></div>
     <div class="progress-scale" aria-hidden="true"><span>0 %</span><span>25 %</span><span>50 %</span><span>75 %</span><span>100 %</span></div>`;
   el.classList.toggle('is-complete', done);
@@ -1847,8 +1975,8 @@ function renderNotices() {
   }
   const rem = backupReminder();
   if (hasData && rem) {
-    out.push(`<div class="notice">${icon('shield')}<div class="notice-body"><div class="notice-title">${esc(rem.title)}</div>${esc(rem.text)}
-      <div class="notice-actions"><button class="btn btn-sm btn-secondary" data-action="backup" type="button">${icon('download', 'i-sm')}Download backup</button><button class="btn btn-sm btn-ghost" data-action="snooze-backup" type="button">Remind me later</button></div></div></div>`);
+    out.push(`<div class="notice is-backup">${icon('shield')}<div class="notice-body"><div class="notice-title">${esc(rem.title)}</div><span class="notice-long">${esc(rem.text)}</span>
+      <div class="notice-actions"><button class="btn btn-sm btn-secondary" data-action="backup" type="button">${icon('download', 'i-sm')}<span class="lbl-long">Download backup</span><span class="lbl-short">Back up</span></button><button class="btn btn-sm btn-ghost" data-action="snooze-backup" type="button"><span class="lbl-long">Remind me later</span><span class="lbl-short">Later</span></button></div></div></div>`);
   }
   const html = out.join('');
   const el = $('#notices');
@@ -1867,14 +1995,15 @@ const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.pla
 const isStandalone = () => window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 
 /* ---------- tabs */
+let _navBtns = null;
 function renderTabs() {
-  $$('[data-action="tab"][data-tab]').forEach((b) => {
-    if (b.classList.contains('brand')) return;
+  // nav buttons are static: look them up once instead of scanning the whole (large) document on every render
+  if (!_navBtns) _navBtns = $$('.tabs [data-tab], .tabbar [data-tab]');
+  _navBtns.forEach((b) => {
     if (b.dataset.tab === store.view.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    const i = b.classList.contains('tabbar-btn') && b.querySelector('.i');
+    if (i) { if (b.dataset.tab === 'tobuy' && store.view.tab === 'tobuy') i.setAttribute('data-fill', ''); else i.removeAttribute('data-fill'); }
   });
-  $$('.tabbar-btn .i').forEach((i) => i.removeAttribute('data-fill'));
-  const cur = $(`.tabbar-btn[data-tab="${store.view.tab}"] .i`);
-  if (cur && store.view.tab === 'tobuy') cur.setAttribute('data-fill', '');
 }
 
 /* ---------- collection */
@@ -1904,6 +2033,16 @@ function makeMatcher() {
   };
 }
 
+/** True when the current search matches this pack only through its set's milestone text (explained with a tag). */
+function foundOnlyInNotes(p, s) {
+  const terms = norm(store.view.q).split(' ').filter(Boolean);
+  if (!terms.length || !hasNotes(s)) return false;
+  const base = norm(`${p.name} ${s.name} ${s.code} ${s.release.slice(0, 4)}`);
+  if (terms.every((t) => base.includes(t))) return false;
+  const all = base + ' ' + norm(s.notes.map((n) => n.title + ' ' + n.text).join(' '));
+  return terms.every((t) => all.includes(t));
+}
+const NOTE_MATCH_TAG = `<span class="tag tag-note" title="Your search term appears in this set’s milestone text">${icon('spark', 'i-sm')}Found in milestone</span>`;
 function renderFilters() {
   const d = store.data, counts = {};
   for (const [k, , fn] of FILTERS) counts[k] = 0;
@@ -1981,7 +2120,20 @@ function groupedBlocks() {
   return blocks;
 }
 
+/* Set blocks are cached by everything they show, so a tick re-renders one set instead of ~190. */
+const _setBlocks = new Map();
 function setBlockHTML(s, ps) {
+  const I = idx(), d = store.data, all = I.packsBySet.get(s.id) || [];
+  const key = [s.name, s.code, s.release, s.custom, s.edited, JSON.stringify(s.notes || null), F.loc, F.sym, todayISO(), store.view.q,
+    all.map((p) => `${p.id}#${I.pnum.get(p.id)}#${p.name}#${JSON.stringify(d.entries[p.id] || 0)}#${(I.checksByPack.get(p.id) || []).map((c) => c.title).join(';')}`).join('|'),
+    ps.map((p) => p.id).join('|'), I.checks.filter((c) => c.setId === s.id).map((c) => c.title).join(';')].join('\u0001');
+  const hit = _setBlocks.get(s.id);
+  if (hit && hit.key === key) return hit.html;
+  const html = setBlockHTMLRaw(s, ps);
+  _setBlocks.set(s.id, { key, html });
+  return html;
+}
+function setBlockHTMLRaw(s, ps) {
   const d = store.data, all = idx().packsBySet.get(s.id) || [];
   const owned = all.filter((p) => entryOf(d, p.id).qty > 0).length;
   const pct = all.length ? Math.round((owned / all.length) * 100) : 0;
@@ -1993,7 +2145,7 @@ function setBlockHTML(s, ps) {
   return `<section class="set${complete ? ' is-complete' : ''}${notes.length ? ' has-note' : ''}" data-set="${esc(s.id)}">
     <header class="set-head">
       <button class="set-title" type="button" data-action="open-set" aria-label="${esc(s.name)}, set details">
-        <span class="set-line"><span class="set-name">${esc(s.name)}</span>${s.code ? `<span class="code">${esc(s.code)}</span>` : ''}<span class="set-date"><span class="nowrap">${fmtDate(s.release)}</span> <span class="sep">·</span> <span class="nowrap" title="${esc(relAge(s.release, true))}">${esc(relAge(s.release))}</span></span>${s.custom ? '<span class="tag">Custom</span>' : s.edited ? '<span class="tag">Edited</span>' : ''}${setWarn ? `<span class="tag tag-warn">${icon('alert', 'i-sm')}Check</span>` : ''}</span>
+        <span class="set-line"><span class="set-name">${esc(s.name)}</span>${s.code ? `<span class="code">${esc(s.code)}</span>` : ''}<span class="set-date"><span class="nowrap">${fmtDate(s.release)}</span> <span class="sep">·</span> <span class="nowrap" title="${esc(relAge(s.release, true))}">${esc(relAge(s.release))}</span></span>${s.custom ? '<span class="tag">Custom</span>' : s.edited ? '<span class="tag">Edited</span>' : ''}${ps.length && ps.every((p) => foundOnlyInNotes(p, s)) ? NOTE_MATCH_TAG : ''}${setWarn ? `<span class="tag tag-warn">${icon('alert', 'i-sm')}Check</span>` : ''}</span>
       </button>
       <div class="set-prog">${noteBtn || complete ? `<span class="set-badges">${noteBtn}${complete ? `<span class="badge-complete">${icon('check')}Complete</span>` : ''}</span>` : ''}<span class="sr">${complete ? 'Complete: ' : ''}${owned} of ${all.length} owned</span><span class="set-prog-txt"><b>${owned}</b>/${all.length}</span><span class="meter" aria-hidden="true"><i class="comp-fill" style="width:${pct}%;--p:${pct}%"></i></span></div>
     </header>
@@ -2014,8 +2166,8 @@ function packRowHTML(p, s, showSet) {
   return `<div class="row${owned ? ' is-owned' : ''}" role="listitem" data-pack="${esc(p.id)}">
     <label class="chk"><input type="checkbox" data-action="toggle-owned" ${owned ? 'checked' : ''} aria-label="Owned: ${esc(p.name)}"><span class="chk-box">${icon('check')}</span></label>
     <button class="row-main" type="button" data-action="open-pack" aria-label="Edit ${esc(p.name)}">
-      <span class="row-title"><span class="pnum">#${idx().pnum.get(p.id)}</span><span class="row-name" title="${esc(p.name)}">${esc(label)}</span>${e.qty > 1 ? `<span class="qty">×${e.qty}</span>` : ''}${flags ? `<span class="flag" title="${esc(flags.map((f) => f.title).join('; '))}">${icon('alert')}</span>` : ''}</span>
-      ${showSet ? `<span class="row-set"><span class="serif">${esc(s.name)}</span> · ${s.release.slice(0, 4)}</span>` : ''}
+      <span class="row-title"><span class="pnum">#${idx().pnum.get(p.id)}</span><span class="row-name" title="${esc(p.name)}">${esc(label)}</span>${e.qty > 1 ? `<span class="qty">×${e.qty}</span>` : ''}${flags ? `<span class="flag${flags.every((x) => x.level === 'info') ? ' is-info' : ''}" title="${esc(flags.map((f) => f.title).join('; '))}">${icon('alert')}</span>` : ''}</span>
+      ${showSet ? `<span class="row-set"><span class="serif">${esc(s.name)}</span> · ${s.release.slice(0, 4)}${foundOnlyInNotes(p, s) ? ' · <span class="note-match">found in milestone</span>' : ''}</span>` : ''}
       <span class="row-nums${!owned && e.paid == null && e.market == null ? ' is-blank' : ''}">${dateCell}${paidCell}${valueCell}</span>
     </button>
     <button class="star" type="button" data-action="toggle-star" aria-pressed="${e.toBuy}" aria-label="${e.toBuy ? 'Remove from' : 'Add to'} To buy" title="${e.toBuy ? 'On your To buy list' : 'Add to To buy'}">${icon('star')}</button>
@@ -2143,21 +2295,29 @@ function renderToBuy() {
       emptyHTML('star', 'Your To buy list is empty', `Tap <svg class="inline-star i" aria-hidden="true"><use href="#i-star"/></svg> on a pack to add it. You can attach a shop link to each one.`, '<button class="btn btn-primary" data-action="tab" data-tab="collection" type="button">Browse collection</button>');
     return;
   }
-  const missing = s.toBuy.count - s.toBuy.covered;
   const budget = s.toBuy.covered ? moneyC(s.toBuy.c) : '—';
-  const budgetNote = s.toBuy.covered === 0 ? `None of the ${s.toBuy.count} packs has a market value yet.`
-    : missing ? `Market value of <b>${s.toBuy.covered}</b> of ${s.toBuy.count} packs. ${missing} without a value ${missing === 1 ? 'is' : 'are'} not included.` : `Market value of all ${s.toBuy.count} packs.`;
-  const rows = list.map(({ p, s: set, e }) => `<div class="tb-row" data-pack="${esc(p.id)}">
+  const budgetNote = toBuyBudgetNote(s.toBuy);
+  // Packs un-starred in this view stay visible (so a mis-tap can be undone with one tap) but are marked and not counted.
+  const removed = list.filter((x) => !x.e.toBuy).length;
+  const rows = list.map(({ p, s: set, e }) => `<div class="tb-row${e.toBuy ? '' : ' is-removed'}" data-pack="${esc(p.id)}">
       <button class="star" type="button" data-action="toggle-star" aria-pressed="${e.toBuy}" aria-label="${e.toBuy ? 'Remove from' : 'Add to'} To buy">${icon('star')}</button>
-      <button class="tb-main" type="button" data-action="open-pack"><div class="tb-name">${esc(p.name)}${e.qty > 0 ? ` <span class="qty">own ×${e.qty}</span>` : ''}</div><div class="tb-set">#${idx().pnum.get(p.id)} · ${esc(set.name)} · ${fmtDate(set.release)}</div></button>
+      <button class="tb-main" type="button" data-action="open-pack"><div class="tb-name">${esc(p.name)}${e.qty > 0 ? ` <span class="qty">own ×${e.qty}</span>` : ''}</div><div class="tb-set">${e.toBuy ? '' : '<b class="tb-removed">Removed</b> · '}#${idx().pnum.get(p.id)} · ${esc(set.name)} · ${fmtDate(set.release)}</div></button>
       <div class="tb-end"><div class="tb-val">${e.market != null ? money(e.market) : '<span class="faint">—</span>'}<small>${e.market != null ? 'market' : 'no value'}</small></div>
       ${e.url ? `<a class="icon-btn" href="${esc(e.url)}" target="_blank" rel="noopener noreferrer nofollow" aria-label="Open shop link for ${esc(p.name)}" title="${esc(hostOf(e.url))}">${icon('link')}</a>` : `<button class="icon-btn" type="button" data-action="open-pack" aria-label="Add a shop link" title="Add a shop link">${icon('plus')}</button>`}</div>
     </div>`).join('');
-  el.innerHTML = `<div class="view-head"><div><h1 class="view-title">To buy</h1><div class="view-sub">${s.toBuy.count} ${plural(s.toBuy.count, 'pack')} on your list</div></div></div>
+  el.innerHTML = `<div class="view-head"><div><h1 class="view-title">To buy</h1><div class="view-sub">${s.toBuy.count ? `${fmtInt(s.toBuy.count)} ${plural(s.toBuy.count, 'pack')} on your list` : 'Nothing on your list'}${removed ? ` · ${fmtInt(removed)} removed — tap ☆ to add ${removed === 1 ? 'it' : 'them'} back` : ''}</div></div></div>
     <div class="cards">
       <div class="card"><div class="card-sub">Budget</div><div class="big ${s.toBuy.covered ? '' : 'faint'}" style="margin-top:4px">${budget}</div><div class="card-foot" style="margin-top:6px">${budgetNote}</div></div>
       <div class="card span-2 card-flush"><div role="list">${rows}</div></div>
     </div>`;
+}
+/** Budget coverage sentence with correct singular/plural for 0, 1 and many packs. */
+function toBuyBudgetNote(tb) {
+  const n = tb.count, cov = tb.covered, missing = n - cov;
+  if (n === 0) return 'Nothing on your list right now.';
+  if (cov === 0) return n === 1 ? 'The pack on your list has no market value yet.' : `None of the ${fmtInt(n)} packs has a market value yet.`;
+  if (missing) return `Market value of <b>${fmtInt(cov)}</b> of ${fmtInt(n)} packs. ${fmtInt(missing)} without a value ${missing === 1 ? 'is' : 'are'} not included.`;
+  return n === 1 ? 'Market value of the pack on your list.' : `Market value of all ${fmtInt(n)} packs on your list.`;
 }
 function hostOf(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } }
 
@@ -2214,11 +2374,11 @@ function renderInsights() {
   const checksHTML = checks.length ? `<div class="checks">${checks.slice(0, 30).map((c) => {
     const p = c.packId ? d.packs.find((x) => x.id === c.packId) : null;
     const name = p ? `${p.name}` : '';
-    return `<button class="check-row" type="button" data-action="${c.packId ? 'open-pack' : 'open-set'}" ${c.packId ? `data-pack-id="${esc(c.packId)}"` : `data-set-id="${esc(c.setId)}"`}><span class="flag">${icon('alert')}</span><span><b>${esc(c.title)}</b>${name ? esc(name) + ' — ' : ''}${esc(c.text)}</span></button>`;
+    return `<button class="check-row" type="button" data-action="${c.packId ? 'open-pack' : 'open-set'}" ${c.packId ? `data-pack-id="${esc(c.packId)}"` : `data-set-id="${esc(c.setId)}"`}><span class="flag${c.level === 'info' ? ' is-info' : ''}">${icon(c.level === 'info' ? 'info' : 'alert')}</span><span><b>${esc(c.title)}</b>${name ? esc(name) + ' — ' : ''}${esc(c.text)}</span></button>`;
   }).join('')}</div>` : `<div class="empty empty-sm"><p>No problems found. This list flags prices on packs you don’t own, purchase dates long before a release, and custom sets whose dates contradict their names.</p></div>`;
 
   // budget
-  const budget = s.toBuy.count ? `<div class="big ${s.toBuy.covered ? '' : 'faint'}">${s.toBuy.covered ? moneyC(s.toBuy.c) : '—'}</div><div class="card-foot">${s.toBuy.covered === s.toBuy.count ? `Market value of all ${s.toBuy.count} ${plural(s.toBuy.count, 'pack')} on your list.` : `Market value of ${s.toBuy.covered} of ${s.toBuy.count} packs; ${s.toBuy.count - s.toBuy.covered} without a value ${s.toBuy.count - s.toBuy.covered === 1 ? 'is' : 'are'} not included.`}</div><div style="margin-top:8px"><button class="link-btn" type="button" data-action="tab" data-tab="tobuy">Open To buy list ${icon('chev-r', 'i-sm')}</button></div>`
+  const budget = s.toBuy.count ? `<div class="big ${s.toBuy.covered ? '' : 'faint'}">${s.toBuy.covered ? moneyC(s.toBuy.c) : '—'}</div><div class="card-foot">${toBuyBudgetNote(s.toBuy)}</div><div style="margin-top:8px"><button class="link-btn" type="button" data-action="tab" data-tab="tobuy">Open To buy list ${icon('chev-r', 'i-sm')}</button></div>`
     : `<div class="empty empty-sm" style="padding:0"><p>Your To buy list is empty. Tap <svg class="inline-star i" aria-hidden="true"><use href="#i-star"/></svg> on a pack to add it.</p></div>`;
 
   const recentYears = 12;
@@ -2337,6 +2497,13 @@ function confirmDialog({ title, body, confirm = 'Confirm', tone = 'primary', can
 }
 
 /* ---------- field helpers */
+/** After a blocked save: move focus to the first field marked invalid so the message is seen and heard. */
+function focusFirstInvalid(root) {
+  const el = root.querySelector('[aria-invalid="true"]');
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
 function moneyField(name, label, value, help) {
   const sym = esc(F.sym);
   return `<div class="field"><label class="field-label" for="f-${name}">${label}</label>
@@ -2373,7 +2540,7 @@ function openPackSheet(packId, nav) {
     <div class="dlg-body">
       ${p.custom ? `<div class="field"><label class="field-label" for="f-name">Pack name</label><input class="input" id="f-name" name="name" value="${esc(p.name)}" maxlength="300" required aria-describedby="m-name"><div class="field-msg" id="m-name"></div></div>` : ''}
       <div class="field"><span class="field-label">Copies owned</span>
-        <div class="qty-line"><div class="stepper"><button type="button" data-step="-1" aria-label="One fewer">${icon('minus')}</button><input id="f-qty" name="qty" inputmode="numeric" pattern="[0-9]*" value="${e.qty}" aria-label="Copies owned"><button type="button" data-step="1" aria-label="One more">${icon('plus')}</button></div><span class="qty-state" id="qty-state"></span></div></div>
+        <div class="qty-line"><div class="stepper"><button type="button" data-step="-1" aria-label="One fewer">${icon('minus')}</button><input id="f-qty" name="qty" inputmode="numeric" pattern="[0-9]*" value="${e.qty}" aria-label="Copies owned"><button type="button" data-step="1" aria-label="One more">${icon('plus')}</button></div><span class="qty-state" id="qty-state" aria-live="polite"></span></div></div>
       <div class="grid-2">${moneyField('paid', 'Price paid', e.paid, helps.paid)}${dateField('date', 'Purchase date', e.date, 'purchase', helps.date)}</div>
       ${moneyField('market', 'Market value', e.market, helps.market)}
       <div class="calc" id="calc"></div>
@@ -2381,7 +2548,7 @@ function openPackSheet(packId, nav) {
         <label class="switch-row"><span class="switch-text"><b>On my To buy list</b><span>Shows up in To buy with an optional shop link.</span></span><span class="switch"><input type="checkbox" name="toBuy" id="f-toBuy" ${e.toBuy ? 'checked' : ''}><span class="switch-track"></span></span></label>
         <div class="field" id="url-wrap" ${e.toBuy || e.url ? '' : 'hidden'}><label class="field-label" for="f-url">Shop link <span class="opt">optional</span></label><input class="input" id="f-url" name="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://" value="${esc(e.url || '')}" aria-describedby="m-url"><div class="field-msg" id="m-url"></div></div>
       </div>
-      ${checks.length ? `<div class="warnbox">${checks.map((c) => `<div class="warn">${icon('alert')}<div><b>${esc(c.title)}.</b> ${esc(c.text)}</div></div>`).join('')}</div>` : ''}
+      ${checks.length ? `<div class="warnbox">${checks.map((c) => `<div class="${c.level === 'info' ? 'info' : 'warn'}">${icon(c.level === 'info' ? 'info' : 'alert')}<div><b>${esc(c.title)}.</b> ${esc(c.text)}</div></div>`).join('')}</div>` : ''}
     </div>
     <div class="dlg-foot">
       ${p.custom ? `<button class="btn btn-danger-ghost" type="button" data-action="sheet-delete-pack">${icon('trash')}<span>Delete</span></button>` : ''}
@@ -2399,10 +2566,22 @@ function openPackSheet(packId, nav) {
       const qty = f.querySelector('#f-qty');
       const readQty = () => { const n = parseInt(qty.value, 10); return Number.isFinite(n) && n >= 0 ? Math.min(n, 9999) : good.qty; };
       const cur = () => ({ qty: readQty(), paid: good.paid, market: good.market, date: good.date });
+      // Entering a price paid or a purchase date on a pack with 0 copies marks it as owned (1 copy),
+      // unless the user changed the quantity themselves in this sheet. Clearing both again undoes it.
+      let qtyTouched = false, autoOwned = null;
+      const autoOwn = (reason) => {
+        if (qtyTouched || autoOwned || readQty() !== 0) return;
+        qty.value = 1; autoOwned = reason; update();
+      };
+      const autoUnown = () => {
+        if (!autoOwned || qtyTouched || good.paid != null || good.date != null) return;
+        qty.value = 0; autoOwned = null; update();
+      };
       const update = () => {
         const q = readQty();
         f.querySelector('[data-step="-1"]').disabled = q <= 0;
-        f.querySelector('#qty-state').textContent = q === 0 ? 'Not owned' : q === 1 ? 'Owned' : `Owned · ${q} copies`;
+        f.querySelector('#qty-state').textContent = autoOwned && q === 1 ? `Marked as owned because you entered a ${autoOwned}. Tap − if you don’t own it.`
+          : q === 0 ? 'Not owned' : q === 1 ? 'Owned' : `Owned · ${q} copies`;
         const t = entryTotals(Object.assign({}, cur(), { qty: q }));
         const cell = (l, c, signed) => {
           if (c == null) return `<div><div class="calc-l">${l}</div><div class="calc-v is-none">—</div></div>`;
@@ -2416,32 +2595,40 @@ function openPackSheet(packId, nav) {
         else note = q > 1 ? `Totals for ${q} copies.` : 'Totals for 1 copy.';
         f.querySelector('#calc').innerHTML = cell('Spent', t.spentC) + cell('Value', t.valueC) + cell('Gain / loss', t.gainC, true) + `<div class="calc-note">${esc(note)}</div>`;
       };
-      f.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => { qty.value = Math.max(0, readQty() + +b.dataset.step); update(); }));
-      qty.addEventListener('input', update);
+      f.querySelectorAll('[data-step]').forEach((b) => b.addEventListener('click', () => { qtyTouched = true; autoOwned = null; qty.value = Math.max(0, readQty() + +b.dataset.step); update(); }));
+      qty.addEventListener('input', () => { qtyTouched = true; autoOwned = null; update(); });
       qty.addEventListener('change', () => { const n = parseInt(qty.value, 10); if (!(Number.isFinite(n) && n >= 0)) { qty.value = good.qty; } update(); });
       // money fields: validate on change, keep last good value
       for (const k of ['paid', 'market']) {
         const inp = f.querySelector('#f-' + k);
         inp.addEventListener('blur', () => validateMoneyInput(k));
-        inp.addEventListener('input', () => { const r = parseMoney(inp.value, F.decimal); if (r.ok) { good[k] = k === 'market' && r.value === 0 ? null : r.value; setFieldError(dlg, k, null, helps[k]); update(); } });
+        inp.addEventListener('input', () => { const r = parseMoney(inp.value, F.decimal); if (r.ok) { good[k] = k === 'market' && r.value === 0 ? null : r.value; setFieldError(dlg, k, null, helps[k]); update(); if (k === 'paid') { if (good.paid != null) autoOwn('price paid'); else autoUnown(); } } });
+      }
+      // Non-blocking hint when a valid price is probably a typo (e.g. 4505 instead of 4,505 → 4,50).
+      function refreshPaidWarning() {
+        const w = priceWarning(good.paid, good.market);
+        const m = dlg.querySelector('#m-paid');
+        if (m && !m.classList.contains('is-error')) m.innerHTML = w ? `<span class="field-warn">${icon('alert', 'i-sm')}${esc(w)}</span>` : helps.paid;
       }
       function validateMoneyInput(k) {
         const inp = f.querySelector('#f-' + k);
         const r = parseMoney(inp.value, F.decimal);
-        if (!r.ok) { setFieldError(dlg, k, `${r.reason} Kept ${good[k] == null ? 'it empty' : money(good[k])}.`); inp.value = inputMoney(good[k]); return false; }
+        if (!r.ok) { setFieldError(dlg, k, `${r.reason} Fix it or clear the field.`); return false; }
         good[k] = k === 'market' && r.value === 0 ? null : r.value;
         inp.value = inputMoney(good[k]);
         setFieldError(dlg, k, null, k === 'market' && r.value === 0 ? 'Saved as unknown — 0 isn’t treated as a price.' : helps[k]);
+        refreshPaidWarning();
         update(); return true;
       }
       const dateInp = f.querySelector('#f-date');
       const validateDate = () => {
-        if (dateInp.validity && dateInp.validity.badInput) { setFieldError(dlg, 'date', `That date is incomplete. Kept ${good.date ? fmtDate(good.date) : 'it empty'}.`); dateInp.value = good.date || ''; return false; }
+        if (dateInp.validity && dateInp.validity.badInput) { setFieldError(dlg, 'date', 'That date is incomplete. Finish it or clear the field.'); return false; }
         const r = checkDate(dateInp.value, 'purchase');
-        if (!r.ok) { setFieldError(dlg, 'date', `${r.reason} Kept ${good.date ? fmtDate(good.date) : 'it empty'}.`); dateInp.value = good.date || ''; return false; }
+        if (!r.ok) { setFieldError(dlg, 'date', `${r.reason} Fix it or clear the field.`); return false; }
         good.date = r.value; setFieldError(dlg, 'date', null, helps.date);
+        if (good.date) autoOwn('purchase date'); else autoUnown();
         const days = good.date ? daysBetween(good.date, s.release) : 0;
-        if (good.date && days > EARLY_PURCHASE_DAYS) setFieldError(dlg, 'date', null, `<span class="neg">${days} days before the set’s release — double-check the year.</span>`);
+        if (good.date && days > EARLY_PURCHASE_DAYS) setFieldError(dlg, 'date', null, `<span class="field-warn">${icon('info', 'i-sm')}${days} days before the set’s release — earlier than a usual pre-order. Check the year.</span>`);
         update(); return true;
       };
       // Validate on blur/save only: Chrome fires "change" while a year is being typed digit by digit.
@@ -2449,7 +2636,7 @@ function openPackSheet(packId, nav) {
       const tb = f.querySelector('#f-toBuy');
       tb.addEventListener('change', () => { f.querySelector('#url-wrap').hidden = !tb.checked && !f.querySelector('#f-url').value; });
       const urlInp = f.querySelector('#f-url');
-      const validateUrl = () => { const r = safeUrl(urlInp.value); if (!r.ok) { setFieldError(dlg, 'url', `${r.reason} Kept ${good.url ? 'the previous link' : 'it empty'}.`); urlInp.value = good.url || ''; return false; } good.url = r.value; urlInp.value = r.value || ''; setFieldError(dlg, 'url', null); return true; };
+      const validateUrl = () => { const r = safeUrl(urlInp.value); if (!r.ok) { setFieldError(dlg, 'url', `${r.reason} Fix it or clear the field.`); return false; } good.url = r.value; urlInp.value = r.value || ''; setFieldError(dlg, 'url', null); return true; };
       urlInp.addEventListener('blur', validateUrl);
 
       const doSave = () => {
@@ -2459,7 +2646,7 @@ function openPackSheet(packId, nav) {
           nameVal = f.querySelector('#f-name').value.trim();
           if (!nameVal) { setFieldError(dlg, 'name', 'A pack needs a name.'); f.querySelector('#f-name').focus(); return false; }
         }
-        if (!okAll) return false;
+        if (!okAll) { focusFirstInvalid(f); return false; }
         const next = { qty: readQty(), paid: good.paid, date: good.date, market: good.market, toBuy: tb.checked, url: good.url };
         const before = entryOf(store.data, p.id);
         const nameChanged = p.custom && nameVal !== p.name;
@@ -2536,9 +2723,9 @@ function openSetDialog(setId, opts = {}) {
       if (editable) {
         const rel = f.querySelector('#f-release');
         const vRel = () => {
-          if (rel.validity && rel.validity.badInput) { setFieldError(dlg, 'release', `That date is incomplete. Kept ${goodRelease ? fmtDate(goodRelease) : 'it empty'}.`); rel.value = goodRelease; return false; }
+          if (rel.validity && rel.validity.badInput) { setFieldError(dlg, 'release', 'That date is incomplete. Finish it or clear the field.'); renderPlacement(); return false; }
           const r = checkDate(rel.value, 'release');
-          if (!r.ok) { setFieldError(dlg, 'release', `${r.reason} Kept ${goodRelease ? fmtDate(goodRelease) : 'it empty'}.`); rel.value = goodRelease; renderPlacement(); return false; }
+          if (!r.ok) { setFieldError(dlg, 'release', `${r.reason} Fix it or clear the field.`); renderPlacement(); return false; }
           goodRelease = r.value || ''; setFieldError(dlg, 'release', null); renderPlacement(); return true;
         };
         // live preview while editing, but "last good" only changes on blur/save
@@ -2557,13 +2744,14 @@ function openSetDialog(setId, opts = {}) {
           const dr = draft(); dr.name = dr.name.trim();
           let bad = false;
           if (!dr.name) { setFieldError(dlg, 'sname', 'A set needs a name.'); bad = true; }
-          if (!goodRelease) { if (okRel) setFieldError(dlg, 'release', 'A release date is needed to place the set in order.'); bad = true; }
+          if (!okRel) bad = true;
+          else if (!goodRelease) { setFieldError(dlg, 'release', 'A release date is needed to place the set in order.'); bad = true; }
           let newPacks = [];
           if (isNew) {
             newPacks = $$('#new-packs input', f).map((i) => i.value.trim()).filter(Boolean);
-            if (!newPacks.length) { f.querySelector('#new-packs').insertAdjacentHTML('afterend', ''); toastInline(f, 'Add at least one pack — tap a preset below.'); bad = true; }
+            if (!newPacks.length) { f.querySelector('#new-packs').insertAdjacentHTML('afterend', ''); toastInline(f, 'Add at least one pack — type a name or tap a preset above.'); bad = true; }
           }
-          if (bad) return;
+          if (bad) { focusFirstInvalid(f); return; }
           if (isNew) {
             const ns = { id: uid('u-'), name: dr.name, code: dr.code, release: goodRelease, custom: true };
             const ps = [...new Set(newPacks)].map((n) => ({ id: ns.id + '/' + slug(n) + '-' + Math.random().toString(36).slice(2, 6), setId: ns.id, name: n, custom: true }));
@@ -2591,13 +2779,15 @@ function openSetDialog(setId, opts = {}) {
           host.appendChild(row); return row;
         };
         addRow('');
-        host.addEventListener('input', () => renderPlacement());
+        // the 'add at least one pack' error goes away as soon as there is a pack name
+        const clearPackError = () => { if ($$('input', host).some((i) => i.value.trim())) { const m = f.querySelector('.inline-msg'); if (m) m.remove(); } };
+        host.addEventListener('input', () => { clearPackError(); renderPlacement(); });
         host.addEventListener('click', () => setTimeout(() => renderPlacement(), 0));
         f.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
           const nm = (f.querySelector('#f-sname').value.trim() ? f.querySelector('#f-sname').value.trim() + ' ' : '') + b.dataset.preset + ' Pack';
           const empty = $$('input', host).find((i) => !i.value.trim());
           if (empty) empty.value = nm; else addRow(nm);
-          renderPlacement();
+          clearPackError(); renderPlacement();
         }));
         setTimeout(() => { if (!dlg.contains(document.activeElement) || document.activeElement.matches('button')) f.querySelector('#f-sname').focus(); }, 40);
       } else {
@@ -2606,6 +2796,7 @@ function openSetDialog(setId, opts = {}) {
         const addPack = () => {
           const n = np.value.trim();
           if (!n) { setFieldError(dlg, 'newpack', 'Type a pack name first.'); np.focus(); return; }
+          if (f.querySelector('#f-release[aria-invalid="true"]')) { focusFirstInvalid(f); return; } // don't lose a release date that is being corrected
           if ((idx().packsBySet.get(s.id) || []).some((p) => norm(p.name) === norm(n))) { setFieldError(dlg, 'newpack', 'This set already has a pack with that name.'); return; }
           const id = s.id + '/' + slug(n) + '-' + Math.random().toString(36).slice(2, 6);
           const dr = draft(); dr.name = dr.name.trim();
@@ -2736,7 +2927,7 @@ function openDataDialog() {
     : `<div class="status ${persisted ? 'is-good' : ''}">${icon(persisted ? 'shield' : 'info')}<div><b>${persisted ? 'Protected storage.' : 'Saved in this browser.'}</b> ${persisted ? 'The browser has agreed not to clear this data on its own.' : store.persist.supported ? 'The browser may clear it to free space or after long inactivity.' : 'This browser can’t promise to keep it, so keep backups.'}${store.lastSavedAt ? ` Last saved ${F.time.format(store.lastSavedAt)}.` : ''}</div></div>`;
   const ios = isIOS();
   const fmt = csvFormatFor(d.settings);
-  const sample = (loc, sym) => { const keep = { loc: F.loc, nf: F.nf, sym: F.sym }; try { F.nf = new Intl.NumberFormat(loc === 'auto' ? (navigator.language || 'en-GB') : loc, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }); F.sym = sym; return fmtCurrencyParts(1234.5); } finally { Object.assign(F, keep); } };
+  const sample = (loc, sym) => { const keep = { loc: F.loc, nf: F.nf, sym: F.sym }; try { F.nf = new Intl.NumberFormat(loc === 'auto' ? F.loc : loc, { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }); F.sym = sym; return fmtCurrencyParts(1234.5); } catch (e) { return '1,234.50'; } finally { Object.assign(F, keep); } }; // 'auto' uses the locale setupFormat already validated
   const curOpts = CURRENCIES.some(([c]) => c === d.settings.currency) ? '' : `<option value="${esc(d.settings.currency)}" selected>${esc(d.settings.currency)} · ${esc(d.settings.symbol)}</option>`;
   const html = `<form class="dlg-form" novalidate>${dlgHead('Data', 'Backup, spreadsheets and settings')}
   <div class="dlg-body">
@@ -2875,6 +3066,7 @@ async function importCsvFlow() {
     ${curMismatch ? `<div class="warn">${icon('alert')}<div>This file’s prices are labelled <b>${esc(plan.currency)}</b>, but you show amounts in <b>${esc(store.data.settings.currency)}</b>. Numbers are imported as they are — nothing is converted.</div></div>` : ''}
     ${plan.changed.length ? `<details class="disclosure"><summary>Changes${icon('chev', 'chev')}</summary><div class="disclosure-body" style="padding-left:12px"><div class="scroll-list">${plan.changed.slice(0, 300).map((c) => `<div class="ln"><span>#${idx().pnum.get(c.pack.id) || '—'}</span><span>${esc(c.pack.name)}: ${esc(diffLine(c))}</span></div>`).join('')}${plan.changed.length > 300 ? `<div>and ${plan.changed.length - 300} more</div>` : ''}</div></div></details>` : ''}
     ${plan.added.length ? `<details class="disclosure"><summary>Added packs${icon('chev', 'chev')}</summary><div class="disclosure-body" style="padding-left:12px"><div class="scroll-list">${plan.added.slice(0, 300).map((a) => `<div class="ln"><span>Line ${a.line}</span><span>${esc(a.pack.name)} · ${esc(a.set.name)}${a.set.custom && plan.newSets.includes(a.set) ? ' (new set)' : ''}</span></div>`).join('')}</div></div></details>` : ''}
+    ${plan.warnings.length ? `<details class="disclosure" open><summary>${icon('alert')}${plan.warnings.length} ${plural(plan.warnings.length, 'value needs', 'values need')} a look${icon('chev', 'chev')}</summary><div class="disclosure-body" style="padding-left:12px"><div class="scroll-list">${plan.warnings.slice(0, 300).map((x) => `<div>${esc(x)}</div>`).join('')}</div></div></details>` : ''}
     ${plan.ignored.length ? `<details class="disclosure" open><summary>Ignored rows${icon('chev', 'chev')}</summary><div class="disclosure-body" style="padding-left:12px"><div class="scroll-list">${plan.ignored.slice(0, 300).map((x) => `<div class="ln"><span>Line ${x.line}</span><span>${esc(x.reason)}</span></div>`).join('')}</div></div></details>` : ''}
     ${plan.notes.length ? `<details class="disclosure"><summary>${plan.notes.length} ${plural(plan.notes.length, 'note')}${icon('chev', 'chev')}</summary><div class="disclosure-body" style="padding-left:12px"><div class="scroll-list">${plan.notes.slice(0, 300).map((x) => `<div>${esc(x)}</div>`).join('')}</div></div></details>` : ''}
     <p class="help-sm">${n ? 'Packs not in the file stay as they are. You can undo the import right after.' : 'Nothing in this file differs from what you have.'}</p>`;
@@ -2964,6 +3156,7 @@ function onClick(ev) {
       else commit((d) => putEntry(d, packId, nx), { toast: `Added to To buy.` });
       break;
     }
+    case 'toggle-stats': store.view.statsOpen = !store.view.statsOpen; renderStats(); $('[data-action="toggle-stats"]').focus(); break;
     case 'insight-mode': store.view.insightMode = t.dataset.mode; render(); break;
     case 'goto-year': {
       const y = t.dataset.goto;
