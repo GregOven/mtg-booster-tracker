@@ -631,6 +631,11 @@ html.has-dialog, html.has-dialog body { overflow: hidden; }
 .dlg-eyebrow { font-size: var(--fs-2); color: var(--text-2); margin-bottom: 4px; display: flex; flex-wrap: wrap; gap: 0 var(--sp-2); align-items: center; }
 .dlg-title { font-family: var(--font-serif); font-size: var(--fs-5); font-weight: var(--w-semi); margin: 0; line-height: var(--lh-snug); letter-spacing: -.01em; overflow-wrap: anywhere; }
 .dlg-head .icon-btn { margin-top: -8px; }
+/* Every dialog's close (X) button uses the app's Red, also when it has focus (it gets focus when a dialog
+   opens without form fields, so the blue focus ring used to appear on some dialogs and not others). */
+.dlg-head [data-close].icon-btn { color: var(--neg); box-shadow: inset 0 0 0 1.5px var(--neg); }
+.dlg-head [data-close].icon-btn:hover { background: var(--neg-soft); color: var(--neg); }
+.dlg-head [data-close].icon-btn:focus-visible { box-shadow: inset 0 0 0 1.5px var(--neg), 0 0 0 2px var(--surface), 0 0 0 4px var(--neg-line); }
 .dlg-body { padding: var(--sp-5); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: grid; gap: var(--sp-5); align-content: start; }
 .dlg-foot { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-5); padding-bottom: max(var(--sp-3), env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
 .dlg-foot .spacer { flex: 1; }
