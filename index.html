@@ -311,8 +311,11 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .toolbar-end .select { flex: 1; }
 
 .chips {
-  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
-  margin: 0 calc(-1 * var(--sp-4)); padding: 2px var(--sp-4);
+  /* Horizontal swipe only: overflow-x:auto alone makes overflow-y auto too, and the chips' 44px touch
+     areas stuck out 2px below, so the row could also be dragged up and down (and bounced on iOS). */
+  display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+  overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+  margin: 0 calc(-1 * var(--sp-4)); padding: 4px var(--sp-4);
   scroll-padding: var(--sp-4);
 }
 .chips::-webkit-scrollbar { display: none; }
@@ -395,6 +398,15 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .badge-complete .i { width: 12px; height: 12px; stroke-width: 2.6; }
 .set.is-complete .set-prog .meter { display: none; }
 .set.is-complete .chk input:checked + .chk-box { background: var(--pos); }
+/* A complete year is tinted Green the same way as a complete set */
+.group.is-complete .group-head {
+  border: 1px solid var(--pos-line); border-radius: var(--r-3);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pos) 14%, var(--surface)), color-mix(in srgb, var(--pos) 7%, var(--surface)));
+  padding-left: var(--sp-2); margin: var(--sp-2) 0;
+}
+.group.is-complete .group-head:hover { background: linear-gradient(180deg, color-mix(in srgb, var(--pos) 18%, var(--surface)), color-mix(in srgb, var(--pos) 10%, var(--surface))); }
+.group.is-complete .group-head .chev { color: var(--pos); }
+.group.is-complete + .group .group-head { border-top-color: transparent; } /* collapsed complete year: no extra rule under the green box */
 
 .set {
   margin: 0 0 var(--sp-3);
@@ -828,7 +840,7 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
   #toggle-all { grid-area: tog; }
   .toolbar-end [data-action="add-set"] { grid-area: add; width: var(--tap); padding: 0; }
   .toolbar-end [data-action="add-set"] span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .chips { grid-area: chips; margin: 0 calc(-1 * var(--sp-4)) 0 0; padding: 2px var(--sp-4) 2px 0; scroll-padding: 0; }
+  .chips { grid-area: chips; margin: 0 calc(-1 * var(--sp-4)) 0 0; padding: 4px var(--sp-4) 4px 0; scroll-padding: 0; }
 }
 
 /* Mobile dialogs become bottom sheets */
@@ -870,7 +882,7 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
   .toolbar-row { display: contents; }
   .toolbar-row > .chips { grid-area: chips; }
   .toolbar-row > .toolbar-end { grid-area: end; }
-  .chips { margin: 0; padding: 2px; min-width: 0; }
+  .chips { margin: 0; padding: 4px 2px; min-width: 0; }
   .toolbar-end .select { flex: none; width: 196px; }
 
   .list-head {
@@ -2110,9 +2122,10 @@ function groupedBlocks() {
     const open = groupOpen(year);
     const pct = total ? Math.round((owned / total) * 100) : 0;
     const meta = narrowed ? `${fmtInt(matches)} ${plural(matches, 'match', 'matches')} · ${owned} of ${total} owned` : `${gsets.length} ${plural(gsets.length, 'set')} · ${owned} of ${total} owned`;
-    blocks.push({ key: 'g:' + year, html: `<div class="group"><button class="group-head" type="button" data-action="toggle-group" data-year="${year}" aria-expanded="${open}">
+    const yearDone = total > 0 && owned === total;
+    blocks.push({ key: 'g:' + year, html: `<div class="group${yearDone ? ' is-complete' : ''}"><button class="group-head" type="button" data-action="toggle-group" data-year="${year}" aria-expanded="${open}">
       <svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg><span class="group-year">${year}</span><span class="group-meta">${meta}</span>
-      <span class="group-prog"><span class="num">${pct}%</span><span class="meter" aria-hidden="true"><i class="comp-fill${owned === total && total ? ' is-full' : ''}" style="width:${pct}%;--p:${pct}%"></i></span></span></button></div>` });
+      <span class="group-prog">${yearDone ? `<span class="badge-complete">${icon('check')}Complete</span>` : `<span class="num">${pct}%</span><span class="meter" aria-hidden="true"><i class="comp-fill" style="width:${pct}%;--p:${pct}%"></i></span>`}</span></button></div>` });
     if (!open) continue;
     for (const [s, ps] of visible) blocks.push({ key: 's:' + s.id, rows: true, html: setBlockHTML(s, ps) });
   }
