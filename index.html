@@ -1309,7 +1309,7 @@ function priceWarning(v, market) {
 /* ---------- Cardmarket
    The button opens a pack's Cardmarket page with the offer filters below. Cardmarket has no public API
    for filtered prices, so the price is read by the user and typed in. Filter values: language 1 = English;
-   sellerReputation 2 = "Very good" or better (1 = Outstanding only). If Cardmarket changes them, edit here. */
+   sellerReputation 2 = "Very good" or better (1 = Outstanding only). Confirmed on cardmarket.com on 18 Oct 2026. If Cardmarket changes them, edit here. */
 const CM_FILTERS = { language: '1', sellerReputation: '2' };
 const CM_FILTER_LABEL = 'English · sellers rated Very good or better';
 /** Validates and normalises a Cardmarket product page link (query string and #hash dropped). */
@@ -1333,7 +1333,8 @@ const cmSlug = (name) => name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').
 function cardmarketGuess(p, s) {
   if (!p || !s || p.custom) return null;
   const pre = CM_SET_NAMES[String(s.code || '').toUpperCase()];
-  const name = pre ? `${pre} ${shortName(p.name, s.name)}` : p.name.replace(/\s+pack$/i, '');
+  let name = pre ? `${pre} ${shortName(p.name, s.name)}` : p.name.replace(/\s+pack$/i, '');
+  if (/^secret lair\b/i.test(name)) name = `Secret Lair Drop Series ${name}`; // Cardmarket files Secret Lair drops under this series name
   return `https://www.cardmarket.com/en/Magic/Products/Boosters/${cmSlug(name)}`;
 }
 const cmSearchHref = (p) => { const u = new URL('https://www.cardmarket.com/en/Magic/Products/Search'); u.searchParams.set('searchString', p.name.replace(/\s+pack$/i, '')); return u.toString(); };
