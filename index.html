@@ -713,6 +713,21 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 .switch input:checked + .switch-track::after { transform: translateX(18px); background: #fff; }
 .switch input:focus-visible + .switch-track { box-shadow: var(--focus); }
 
+.mcheck { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--sp-3); margin-top: calc(-1 * var(--sp-3)); font-size: var(--fs-2); color: var(--text-2); }
+.mcheck[hidden] { display: none; }
+.mcheck #mcheck-text { display: inline-flex; align-items: center; gap: 5px; }
+.mcheck .i { width: 14px; height: 14px; color: var(--pos); }
+.mcheck.is-stale #mcheck-text { color: var(--text); }
+.mcheck.is-stale .i { color: var(--accent); }
+.mcheck [hidden] { display: none; }
+.stale-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-left: 5px; vertical-align: middle; }
+.cm-box { display: grid; gap: 6px; justify-items: start; margin-top: calc(-1 * var(--sp-2)); }
+.cm-btn { min-height: 40px; }
+.cm-sub { font-size: var(--fs-1); color: var(--text-2); }
+.cm-edit { min-height: 32px; padding: 0; font-size: var(--fs-2); }
+.cm-links { display: flex; flex-wrap: wrap; gap: 0 var(--sp-4); }
+.cm-links [hidden] { display: none; }
+.cm-box #cm-wrap { width: 100%; margin-top: 2px; }
 .calc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--r-2); background: var(--surface-2); overflow: hidden; }
 .calc > div { padding: var(--sp-3); min-width: 0; }
 .calc > div + div { border-left: 1px solid var(--line); }
@@ -1215,6 +1230,10 @@ function fmtDate(iso) {
   const d = new Date(Date.UTC(2000, p.m - 1, p.d)); d.setUTCFullYear(p.y);
   return F.date.format(d);
 }
+/** Market values older than this are marked as possibly outdated. */
+const STALE_VALUE_DAYS = 90;
+const valueAgeDays = (e) => (e.market != null && e.mdate ? daysBetween(e.mdate, todayISO()) : null);
+const isStaleValue = (e) => { const d = valueAgeDays(e); return d != null && d > STALE_VALUE_DAYS; };
 function relAge(iso, long) {
   const days = daysBetween(todayISO(), iso);
   if (!isFinite(days)) return '';
@@ -1287,6 +1306,47 @@ function priceWarning(v, market) {
   if (v >= 1000 && (market == null || v > market * 2)) return `${money(v)} is unusually high for a booster — check the decimal mark.`;
   return null;
 }
+/* ---------- Cardmarket
+   The button opens a pack's Cardmarket page with the offer filters below. Cardmarket has no public API
+   for filtered prices, so the price is read by the user and typed in. Filter values: language 1 = English;
+   sellerReputation 2 = "Very good" or better (1 = Outstanding only). If Cardmarket changes them, edit here. */
+const CM_FILTERS = { language: '1', sellerReputation: '2' };
+const CM_FILTER_LABEL = 'English · sellers rated Very good or better';
+/** Validates and normalises a Cardmarket product page link (query string and #hash dropped). */
+function cardmarketPage(raw) {
+  const u = safeUrl(raw);
+  if (!u.ok || !u.value) return u;
+  let url; try { url = new URL(u.value); } catch (e) { return { ok: false, reason: 'That isn’t a valid link.' }; }
+  if (!/(^|\.)cardmarket\.com$/i.test(url.hostname)) return { ok: false, reason: 'That isn’t a Cardmarket link (cardmarket.com).' };
+  if (!/\/Products\/[^/]+\/[^/]+/i.test(url.pathname) || /\/Products\/Search/i.test(url.pathname)) return { ok: false, reason: 'Open the pack’s own page on Cardmarket and copy that link (it contains /Products/…/…).' };
+  return { ok: true, value: `https://www.cardmarket.com${url.pathname.replace(/\/+$/, '')}` };
+}
+/* Cardmarket product names are "<set> <type> Booster". Sets where Cardmarket uses a different set name
+   (newer Universes Beyond sets carry a "Magic The Gathering" prefix; a few old sets use short names). */
+const CM_SET_NAMES = {
+  MSH: 'Magic The Gathering Marvel Super Heroes', SPM: 'Magic The Gathering Marvels Spider-Man', FIN: 'Magic The Gathering FINAL FANTASY',
+  TMT: 'Magic The Gathering Teenage Mutant Ninja Turtles', TLA: 'Magic The Gathering Avatar The Last Airbender', TLE: 'Magic The Gathering Avatar The Last Airbender',
+  '3ED': 'Revised', '30A': '30th Anniversary Edition',
+};
+const cmSlug = (name) => name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/['’:.,!&()/]/g, '').trim().replace(/[\s-]+/g, '-');
+/** Best guess of a catalog pack's Cardmarket page (not verified; the sheet says so and offers Search). */
+function cardmarketGuess(p, s) {
+  if (!p || !s || p.custom) return null;
+  const pre = CM_SET_NAMES[String(s.code || '').toUpperCase()];
+  const name = pre ? `${pre} ${shortName(p.name, s.name)}` : p.name.replace(/\s+pack$/i, '');
+  return `https://www.cardmarket.com/en/Magic/Products/Boosters/${cmSlug(name)}`;
+}
+const cmSearchHref = (p) => { const u = new URL('https://www.cardmarket.com/en/Magic/Products/Search'); u.searchParams.set('searchString', p.name.replace(/\s+pack$/i, '')); return u.toString(); };
+/** Where the Cardmarket button goes: the saved product page (or a Cardmarket shop link), else a search; always with the filters. */
+function cardmarketHref(p, e, s) {
+  let base = e.cm, kind = base ? 'saved' : null;
+  if (!base && e.url) { const c = cardmarketPage(e.url); if (c.ok && c.value) { base = c.value; kind = 'shop'; } }
+  if (!base) { base = cardmarketGuess(p, s); if (base) kind = 'guess'; }
+  const url = new URL(base || cmSearchHref(p));
+  for (const [k, v] of Object.entries(CM_FILTERS)) url.searchParams.set(k, v);
+  const search = new URL(cmSearchHref(p)); for (const [k, v] of Object.entries(CM_FILTERS)) search.searchParams.set(k, v);
+  return { href: url.toString(), kind: kind || 'search', direct: !!base, searchHref: search.toString() };
+}
 function safeUrl(raw) {
   let s = String(raw == null ? '' : raw).trim();
   if (!s) return { ok: true, value: null };
@@ -1303,16 +1363,17 @@ function safeUrl(raw) {
    MODEL — pure functions over a data object
    data = { v, sets[], packs[], entries{}, settings, meta, ui }
    ============================================================================= */
-const EMPTY_ENTRY = Object.freeze({ qty: 0, paid: null, date: null, market: null, toBuy: false, url: null });
+const EMPTY_ENTRY = Object.freeze({ qty: 0, paid: null, date: null, market: null, mdate: null, toBuy: false, url: null, cm: null });
 const entryOf = (data, id) => Object.assign({}, EMPTY_ENTRY, data.entries[id]);
 function compactEntry(e) {
   const o = {};
   if (e.qty > 0) o.qty = e.qty;
   if (e.paid != null) o.paid = e.paid;
   if (e.date) o.date = e.date;
-  if (e.market != null && e.market > 0) o.market = e.market;
+  if (e.market != null && e.market > 0) { o.market = e.market; if (e.mdate) o.mdate = e.mdate; }
   if (e.toBuy) o.toBuy = true;
   if (e.url) o.url = e.url;
+  if (e.cm) o.cm = e.cm;
   return Object.keys(o).length ? o : null;
 }
 function putEntry(data, id, e) { const c = compactEntry(e); if (c) data.entries[id] = c; else delete data.entries[id]; }
@@ -1595,6 +1656,8 @@ function sanitizeData(raw) {
       if (e.date != null) { const c = checkDate(e.date, 'purchase'); if (c.ok) x.date = c.value; else badFields++; }
       if (e.toBuy) x.toBuy = true;
       if (e.url != null) { const u = safeUrl(e.url); if (u.ok) x.url = u.value; else badFields++; }
+      if (e.cm != null) { const u = cardmarketPage(e.cm); if (u.ok) x.cm = u.value; else badFields++; }
+      if (e.mdate != null) { const c = checkDate(e.mdate, 'purchase'); if (c.ok) x.mdate = c.value; else badFields++; }
       const c = compactEntry(x); if (c) entries[id] = c;
     }
   }
@@ -1665,7 +1728,7 @@ const CSV_COLS = {
   set: /^(set|set name|expansion)$/, code: /^(code|set code)$/, release: /^(set release date|release date|release|released)$/,
   product: /^(product|product name|pack|pack name)$/, owned: /^(owned|own|have)$/, qty: /^(quantity|qty|copies|count)$/,
   market: /^(market( price| value)?|value)$/, paid: /^(price paid|paid|purchase price)$/, date: /^(date bought|purchase date|bought|date purchased|bought on)$/,
-  toBuy: /^(to buy|tobuy|wishlist|want)$/, url: /^(shop link|link|url|shop url)$/,
+  mdate: /^(market checked|value checked|market date|price checked)$/, toBuy: /^(to buy|tobuy|wishlist|want)$/, url: /^(shop link|link|url|shop url)$/, cm: /^(cardmarket( link| url| page)?)$/,
 };
 function mapHeader(header) {
   const map = {}; let currency = null;
@@ -1753,6 +1816,10 @@ function planCsvImport(data, text) {
     if (dv !== undefined) { const c = checkDate(parseLooseDate(dv), 'purchase'); if (c.ok) e.date = c.value; else lineNotes.push(`date “${dv}”`); }
     const tb = get(r, 'toBuy'); if (tb !== undefined) { const b = parseBool(tb); if (b !== null) e.toBuy = b; }
     const u = get(r, 'url'); if (u !== undefined) { const c = safeUrl(u); if (c.ok) e.url = c.value; else lineNotes.push(`link “${u}”`); }
+    const mdv = get(r, 'mdate');
+    if (mdv !== undefined && String(mdv).trim()) { const c = checkDate(parseLooseDate(mdv), 'purchase'); if (c.ok) e.mdate = c.value; else lineNotes.push(`market checked date “${mdv}”`); }
+    else if (e.market != null && e.market !== before.market) e.mdate = todayISO(); // a new value from the file counts as checked on import day
+    const cmv = get(r, 'cm'); if (cmv !== undefined) { const c = cardmarketPage(cmv); if (c.ok) e.cm = c.value; else lineNotes.push(`Cardmarket link “${cmv}”`); }
     if (lineNotes.length) plan.warnings.push(`Line ${line} · ${product}: ${lineNotes.join(', ')} ${lineNotes.length === 1 ? 'isn’t' : 'aren’t'} valid, so the current ${lineNotes.length === 1 ? 'value stays' : 'values stay'}.`);
     if (e.paid != null && e.paid !== before.paid) { const pw = priceWarning(e.paid, e.market); if (pw) plan.warnings.push(`Line ${line} · ${product}: price paid ${pw}`); }
     working.set(p.id, e);
@@ -1783,7 +1850,7 @@ function csvFormatFor(settings) {
 }
 function buildCsv(data, fmt) {
   const cur = data.settings.currency;
-  const head = ['Set', 'Code', 'Set Release Date', 'Product', 'Owned', 'Quantity', `Market Price (${cur})`, `Price Paid (${cur})`, 'Date Bought', 'To Buy', 'Shop Link'];
+  const head = ['Set', 'Code', 'Set Release Date', 'Product', 'Owned', 'Quantity', `Market Price (${cur})`, `Price Paid (${cur})`, 'Date Bought', 'To Buy', 'Shop Link', 'Cardmarket Link', 'Market Checked'];
   const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const num = (v) => (v == null ? '' : v.toFixed(2).replace('.', fmt.dec));
   const { asc } = numbering(data.sets);
@@ -1793,7 +1860,7 @@ function buildCsv(data, fmt) {
   const lines = [head.map(q).join(fmt.delim)];
   for (const p of packs) {
     const s = setsById.get(p.setId), e = entryOf(data, p.id);
-    lines.push([s.name, s.code, s.release, p.name, e.qty > 0 ? 'YES' : 'NO', e.qty, num(e.market), num(e.paid), e.date || '', e.toBuy ? 'YES' : 'NO', e.url || ''].map(q).join(fmt.delim));
+    lines.push([s.name, s.code, s.release, p.name, e.qty > 0 ? 'YES' : 'NO', e.qty, num(e.market), num(e.paid), e.date || '', e.toBuy ? 'YES' : 'NO', e.url || '', e.cm || '', e.market != null ? (e.mdate || '') : ''].map(q).join(fmt.delim));
   }
   return '\uFEFF' + lines.join('\r\n') + '\r\n';
 }
@@ -2187,7 +2254,7 @@ function packRowHTML(p, s, showSet) {
   const paidCell = owned
     ? (e.paid != null ? `<span class="cell c-paid"><span class="lbl">Paid</span>${money(e.paid)}</span>` : '<span class="cell c-paid is-none"><span class="lbl">Paid</span>—</span>')
     : (e.paid != null ? `<span class="cell c-paid is-uncounted" title="Not counted: pack isn’t marked as owned"><span class="lbl">Paid</span>${money(e.paid)}</span>` : '<span class="cell c-paid is-none"></span>');
-  const valueCell = e.market != null ? `<span class="cell c-value"><span class="lbl">Value</span>${money(e.market)}</span>` : '<span class="cell c-value is-none"><span class="lbl">Value</span>—</span>';
+  const valueCell = e.market != null ? `<span class="cell c-value${isStaleValue(e) ? ' is-stale' : ''}"${isStaleValue(e) ? ` title="Market value checked ${esc(fmtDate(e.mdate))} (${esc(relAge(e.mdate, true))})"` : ''}><span class="lbl">Value</span>${money(e.market)}${isStaleValue(e) ? `<span class="stale-dot" aria-hidden="true"></span><span class="sr">, checked over 3 months ago</span>` : ''}</span>` : '<span class="cell c-value is-none"><span class="lbl">Value</span>—</span>';
   const dateCell = owned ? `<span class="cell c-date${e.date ? '' : ' is-none'}">${e.date ? fmtDate(e.date) : '—'}</span>` : '<span class="cell c-date"></span>';
   return `<div class="row${owned ? ' is-owned' : ''}" role="listitem" data-pack="${esc(p.id)}">
     <label class="chk"><input type="checkbox" data-action="toggle-owned" ${owned ? 'checked' : ''} aria-label="Owned: ${esc(p.name)}"><span class="chk-box">${icon('check')}</span></label>
@@ -2587,6 +2654,13 @@ function openPackSheet(packId, nav) {
         <div class="qty-line"><div class="stepper"><button type="button" data-step="-1" aria-label="One fewer">${icon('minus')}</button><input id="f-qty" name="qty" inputmode="numeric" pattern="[0-9]*" value="${e.qty}" aria-label="Copies owned"><button type="button" data-step="1" aria-label="One more">${icon('plus')}</button></div><span class="qty-state" id="qty-state" aria-live="polite"></span></div></div>
       <div class="grid-2">${moneyField('paid', 'Price paid', e.paid, helps.paid)}${dateField('date', 'Purchase date', e.date, 'purchase', helps.date)}</div>
       ${moneyField('market', 'Market value', e.market, helps.market)}
+      <div class="mcheck" id="mcheck" aria-live="polite"><span id="mcheck-text"></span><button class="link-btn cm-edit" type="button" id="mcheck-today">Still correct — mark checked today</button></div>
+      <div class="cm-box" id="cm-box">
+        <a class="btn btn-secondary cm-btn" id="cm-open" target="_blank" rel="noopener noreferrer nofollow">${icon('link', 'i-sm')}<span id="cm-open-label"></span></a>
+        <div class="cm-sub"><span>${esc(CM_FILTER_LABEL)}</span><span id="cm-mode"></span></div>
+        <div class="cm-links"><a class="link-btn cm-edit" id="cm-search" target="_blank" rel="noopener noreferrer nofollow">Search Cardmarket</a><button class="link-btn cm-edit" type="button" id="cm-toggle" aria-expanded="false" aria-controls="cm-wrap"></button></div>
+        <div class="field" id="cm-wrap" hidden><label class="field-label" for="f-cm">Cardmarket page of this pack</label><input class="input" id="f-cm" name="cm" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.cardmarket.com/en/Magic/Products/…" value="${esc(e.cm || '')}" aria-describedby="m-cm"><div class="field-msg" id="m-cm">Open the pack on Cardmarket, copy the link from the address bar and paste it here. Saved with the pack and in backups.</div></div>
+      </div>
       <div class="calc" id="calc"></div>
       <div class="field">
         <label class="switch-row"><span class="switch-text"><b>On my To buy list</b><span>Shows up in To buy with an optional shop link.</span></span><span class="switch"><input type="checkbox" name="toBuy" id="f-toBuy" ${e.toBuy ? 'checked' : ''}><span class="switch-track"></span></span></label>
@@ -2682,16 +2756,56 @@ function openPackSheet(packId, nav) {
       const urlInp = f.querySelector('#f-url');
       const validateUrl = () => { const r = safeUrl(urlInp.value); if (!r.ok) { setFieldError(dlg, 'url', `${r.reason} Fix it or clear the field.`); return false; } good.url = r.value; urlInp.value = r.value || ''; setFieldError(dlg, 'url', null); return true; };
       urlInp.addEventListener('blur', validateUrl);
+      // Cardmarket: button target follows the saved page (or a Cardmarket shop link), else a search with filters
+      const cmInp = f.querySelector('#f-cm'), cmWrap = f.querySelector('#cm-wrap'), cmToggle = f.querySelector('#cm-toggle');
+      const cmHelp = f.querySelector('#m-cm').innerHTML;
+      const renderCm = () => {
+        const t = cardmarketHref(p, { cm: good.cm, url: good.url }, s);
+        f.querySelector('#cm-open').href = t.href;
+        f.querySelector('#cm-search').href = t.searchHref;
+        f.querySelector('#cm-search').hidden = t.kind === 'saved' || t.kind === 'shop' || t.kind === 'search';
+        f.querySelector('#cm-open-label').textContent = t.kind === 'search' ? 'Find on Cardmarket' : 'Check price on Cardmarket';
+        f.querySelector('#cm-mode').textContent = t.kind === 'guess' ? ' · link guessed from the name; if it’s wrong, use Search'
+          : t.kind === 'search' ? ' · search results — open the pack there' : '';
+        cmToggle.textContent = good.cm ? 'Change Cardmarket link' : 'Save the pack’s Cardmarket link';
+        cmToggle.hidden = !cmWrap.hidden;
+      };
+      const validateCm = () => { const r = cardmarketPage(cmInp.value); if (!r.ok) { setFieldError(dlg, 'cm', `${r.reason} Fix it or clear the field.`); return false; } good.cm = r.value; cmInp.value = r.value || ''; setFieldError(dlg, 'cm', null, cmHelp); renderCm(); return true; };
+      cmInp.addEventListener('blur', validateCm);
+      cmInp.addEventListener('input', () => { const r = cardmarketPage(cmInp.value); if (r.ok) { good.cm = r.value; setFieldError(dlg, 'cm', null, cmHelp); renderCm(); } });
+      cmToggle.addEventListener('click', () => { cmWrap.hidden = false; cmToggle.setAttribute('aria-expanded', 'true'); renderCm(); cmInp.focus(); });
+      urlInp.addEventListener('input', () => { const r = safeUrl(urlInp.value); if (r.ok) { good.url = r.value; renderCm(); } });
+      renderCm();
+      // when was the market value last entered or confirmed
+      let mdate = e.mdate;
+      const renderCheck = () => {
+        const m = good.market, changed = m !== e.market;
+        const el = f.querySelector('#mcheck'), txt = f.querySelector('#mcheck-text'), btn = f.querySelector('#mcheck-today');
+        el.hidden = m == null;
+        if (m == null) return;
+        const d = changed ? todayISO() : mdate;
+        const age = d ? daysBetween(d, todayISO()) : null;
+        el.classList.toggle('is-stale', age != null && age > STALE_VALUE_DAYS);
+        txt.innerHTML = changed ? `${icon('check', 'i-sm')}Checked today (saved with the new value)`
+          : !d ? `${icon('info', 'i-sm')}Check date unknown`
+          : age > STALE_VALUE_DAYS ? `${icon('info', 'i-sm')}Checked ${esc(fmtDate(d))} — ${esc(relAge(d, true))}, may be outdated`
+          : `${icon('check', 'i-sm')}Checked ${age === 0 ? 'today' : `${esc(fmtDate(d))} · ${esc(relAge(d, true))}`}`;
+        btn.hidden = changed || d === todayISO();
+      };
+      f.querySelector('#mcheck-today').addEventListener('click', () => { mdate = todayISO(); renderCheck(); f.querySelector('#f-market').focus(); });
+      f.querySelector('#f-market').addEventListener('input', () => setTimeout(renderCheck, 0));
+      f.querySelector('#f-market').addEventListener('blur', () => setTimeout(renderCheck, 0));
+      renderCheck();
 
       const doSave = () => {
-        const okAll = validateMoneyInput('paid') & validateMoneyInput('market') & validateDate() & validateUrl();
+        const okAll = validateMoneyInput('paid') & validateMoneyInput('market') & validateDate() & validateUrl() & validateCm();
         let nameVal = null;
         if (p.custom) {
           nameVal = f.querySelector('#f-name').value.trim();
           if (!nameVal) { setFieldError(dlg, 'name', 'A pack needs a name.'); f.querySelector('#f-name').focus(); return false; }
         }
         if (!okAll) { focusFirstInvalid(f); return false; }
-        const next = { qty: readQty(), paid: good.paid, date: good.date, market: good.market, toBuy: tb.checked, url: good.url };
+        const next = { qty: readQty(), paid: good.paid, date: good.date, market: good.market, toBuy: tb.checked, url: good.url, cm: good.cm, mdate: good.market == null ? null : good.market !== e.market ? todayISO() : mdate };
         const before = entryOf(store.data, p.id);
         const nameChanged = p.custom && nameVal !== p.name;
         if (!sameEntry(before, next) || nameChanged) {
@@ -3097,8 +3211,8 @@ async function importCsvFlow() {
   if (plan.error) { alertDialog('Can’t import this file', plan.error); return; }
   const n = plan.added.length + plan.changed.length;
   const curMismatch = plan.currency && plan.currency !== store.data.settings.currency;
-  const fmtVal = (k, v) => (k === 'qty' ? String(v) : k === 'toBuy' ? (v ? 'yes' : 'no') : k === 'date' ? (v ? fmtDate(v) : '—') : k === 'url' ? (v ? hostOf(v) : '—') : money(v));
-  const labels = { qty: 'owned', paid: 'paid', market: 'value', date: 'bought', toBuy: 'to buy', url: 'link' };
+  const fmtVal = (k, v) => (k === 'qty' ? String(v) : k === 'toBuy' ? (v ? 'yes' : 'no') : k === 'date' ? (v ? fmtDate(v) : '—') : k === 'url' || k === 'cm' ? (v ? (k === 'cm' ? 'saved' : hostOf(v)) : '—') : k === 'mdate' ? (v ? fmtDate(v) : '—') : money(v));
+  const labels = { qty: 'owned', paid: 'paid', market: 'value', date: 'bought', mdate: 'value checked', toBuy: 'to buy', url: 'link', cm: 'Cardmarket link' };
   const diffLine = (c) => Object.keys(labels).filter((k) => JSON.stringify(c.before[k]) !== JSON.stringify(c.after[k])).map((k) => `${labels[k]} ${fmtVal(k, c.before[k])} → ${fmtVal(k, c.after[k])}`).join(', ');
   const body = `<p class="dlg-text"><b>${esc(file.name)}</b> · ${fmtInt(plan.rows)} ${plural(plan.rows, 'row')} · ${plan.delim === ';' ? 'semicolon' : plan.delim === '\t' ? 'tab' : 'comma'}-separated · decimal ${plan.decimalComma ? 'comma' : 'point'}${plan.currency ? ` · prices in ${esc(plan.currency)}` : ''}</p>
     <div class="counts">
@@ -3302,7 +3416,7 @@ function boot() {
 }
 
 // Test hooks (pure functions only — no network, no side effects)
-window.__PL = { MILESTONES, packTypeRank, packNumbering, completionInfo, idx: () => idx(), parseMoney, checkDate, parseISO, daysBetween, numbering, summarize, entryTotals, sanitizeData, planCsvImport, applyCsvPlan, buildCsv, shortName, placement, sequenceWarnings, dataChecks, seedData, parseCSV, detectDelimiter, store, setToday: (t) => { TODAY_OVERRIDE = t; }, money, setupFormat };
+window.__PL = { MILESTONES, cardmarketGuess, cardmarketHref, cardmarketPage, isStaleValue, packTypeRank, packNumbering, completionInfo, idx: () => idx(), parseMoney, checkDate, parseISO, daysBetween, numbering, summarize, entryTotals, sanitizeData, planCsvImport, applyCsvPlan, buildCsv, shortName, placement, sequenceWarnings, dataChecks, seedData, parseCSV, detectDelimiter, store, setToday: (t) => { TODAY_OVERRIDE = t; }, money, setupFormat };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
