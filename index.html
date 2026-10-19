@@ -571,6 +571,10 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .rank-name { font-size: var(--fs-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-sub { font-size: var(--fs-1); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-val { text-align: right; font-variant-numeric: tabular-nums; font-size: var(--fs-3); white-space: nowrap; }
+.mover-val { display: inline-flex; align-items: center; gap: 3px; font-weight: var(--w-medium); }
+.mover-val .i { width: 14px; height: 14px; }
+@media (max-width: 520px) { .mv-detail { display: none; } }
+.card-note { font-size: var(--fs-1); color: var(--text-2); margin: calc(-1 * var(--sp-2)) 4px 0; }
 .rank-val small { display: block; font-size: var(--fs-1); color: var(--text-3); }
 
 .checks { display: grid; gap: 2px; }
@@ -2510,6 +2514,26 @@ function renderInsights() {
   }).join('')}</div>`;
   const totalOwned = s.owned, totalPacks = s.catalogPacks;
 
+  // biggest gains and losses: owned packs with both a price paid and a market value, (value − paid) × copies
+  const priced = owned.filter((x) => x.e.paid != null && x.e.market != null).map((x) => {
+    const basis = cents(x.e.paid) * x.e.qty, gain = cents(x.e.market) * x.e.qty - basis;
+    return Object.assign(x, { basis, gain, ratio: basis > 0 ? gain / basis : null });
+  });
+  const gainers = priced.filter((x) => x.gain > 0).sort((a, b) => (b.gain - a.gain) || ((b.ratio || 0) - (a.ratio || 0))).slice(0, 5);
+  const losers = priced.filter((x) => x.gain < 0).sort((a, b) => (a.gain - b.gain) || ((a.ratio || 0) - (b.ratio || 0))).slice(0, 5);
+  const evenCount = priced.filter((x) => x.gain === 0).length;
+  const moverRow = (x, i) => {
+    const up = x.gain > 0, cls = up ? 'pos' : 'neg';
+    const pct = x.ratio != null ? `${up ? '+' : '−'}${F.pct.format(Math.abs(x.ratio))}` : '';
+    return `<button class="rank-row" type="button" data-action="open-pack" data-pack-id="${esc(x.p.id)}"><span class="rank-n">${i + 1}</span><span style="min-width:0"><div class="rank-name">${esc(shortName(x.p.name, x.s.name))}${x.e.qty > 1 ? ` <span class="faint">×${x.e.qty}</span>` : ''}</div><div class="rank-sub">${esc(x.s.name)} · ${x.s.release.slice(0, 4)}</div></span><span class="rank-val"><span class="${cls} mover-val"><svg class="i" aria-hidden="true"${up ? ' style="transform:rotate(180deg)"' : ''}><use href="#i-chev"/></svg>${moneyC(x.gain, { signed: true })}</span><small>${pct}<span class="mv-detail">${pct ? ' · ' : ''}${moneyC(x.basis)} → ${moneyC(cents(x.e.market) * x.e.qty)}</span></small></span></button>`;
+  };
+  const moversCard = (title, sub, list, emptyText) => `<div class="card card-flush"><div class="card-head"><div><h2 class="card-title">${title}</h2><div class="card-sub">${sub}</div></div></div>${list.length ? `<div style="padding:8px 8px 12px"><div class="rank">${list.map(moverRow).join('')}</div></div>` : `<div class="empty empty-sm"><p>${emptyText}</p></div>`}</div>`;
+  const moversBase = priced.length ? `Out of ${fmtInt(priced.length)} owned ${plural(priced.length, 'pack')} with both a price paid and a market value${evenCount ? ` · ${fmtInt(evenCount)} exactly even` : ''}.` : '';
+  const noPricedText = owned.length ? 'Needs owned packs with both a price paid and a market value.' : 'Tick the packs you own and add prices to see this.';
+  const moversHTML = moversCard('Biggest gains', 'Market value above what you paid, top 5', gainers, priced.length ? 'None of your packs is worth more than you paid yet.' : noPricedText)
+    + moversCard('Biggest losses', 'Market value below what you paid, top 5', losers, priced.length ? 'None of your packs is worth less than you paid.' : noPricedText)
+    + (moversBase ? `<div class="card-note span-2">${esc(moversBase)}</div>` : '');
+
   // checks
   const checks = I.checks;
   const checksHTML = checks.length ? `<div class="checks">${checks.slice(0, 30).map((c) => {
@@ -2538,6 +2562,7 @@ function renderInsights() {
       <div class="card"><div class="card-head"><div><h2 class="card-title">To-buy budget</h2><div class="card-sub">What your list would cost at market value</div></div></div>${budget}</div>
       <div class="card"><div class="card-head"><div><h2 class="card-title">Data checks</h2><div class="card-sub">${checks.length ? `${checks.length} ${plural(checks.length, 'thing')} worth a look` : 'Everything looks consistent'}</div></div></div>${checksHTML}</div>
     </div>
+    ${moversHTML}
     <div class="card span-2"><div class="card-head"><div><h2 class="card-title">Completion by year</h2><div class="card-sub">Packs owned per release year · tap a year to open it</div></div><div class="card-sub num" style="text-align:right">${fmtInt(totalOwned)}/${fmtInt(totalPacks)}<br>${totalPacks ? Math.round((totalOwned / totalPacks) * 100) : 0}%</div></div>${compHTMLAll}</div>
     <div class="card span-2"><div class="card-head"><div><h2 class="card-title">How the numbers work</h2></div></div>
       <p class="help">Totals use only packs that have the needed data, and always say how many that is. <b>Spent</b> adds price paid × copies for owned packs with a price. <b>Value</b> adds market value × copies for owned packs with a value. <b>Gain / loss</b> compares the two only for packs that have both, so a missing price never counts as zero. A market value of 0 is treated as unknown. Currency is a label only: nothing is converted.</p>
