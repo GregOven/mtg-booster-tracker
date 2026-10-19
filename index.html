@@ -1330,13 +1330,45 @@ const CM_SET_NAMES = {
   MSH: 'Magic The Gathering Marvel Super Heroes', SPM: 'Magic The Gathering Marvels Spider-Man', FIN: 'Magic The Gathering FINAL FANTASY',
   TMT: 'Magic The Gathering Teenage Mutant Ninja Turtles', TLA: 'Magic The Gathering Avatar The Last Airbender', TLE: 'Magic The Gathering Avatar The Last Airbender',
   '3ED': 'Revised', '30A': '30th Anniversary Edition',
+  M19: 'Core 2019', M20: 'Core 2020', M21: 'Core 2021',
+  // 2023–2024 Universes Beyond sets carry a "Universes Beyond" prefix (and Assassin's Creed drops the apostrophe)
+  WHO: 'Universes Beyond Doctor Who', PIP: 'Universes Beyond Fallout', ACR: 'Universes Beyond Assassins Creed',
+  FDN: 'Magic The Gathering Foundations', J25: 'Magic The Gathering Foundations Jumpstart',
 };
-const cmSlug = (name) => name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/['’:.,!&()/]/g, '').trim().replace(/[\s-]+/g, '-');
+/* Full Cardmarket product names for single-booster sets whose catalog pack name differs entirely. */
+const CM_PRODUCT_NAMES = {
+  '6ED': 'Sixth Edition Booster', S00: 'Starter 2000 Advanced Pack', RAV: 'Ravnica City of Guilds Booster',
+  CLU: 'Ravnica Clue Editions Booster', // Cardmarket: "Clue Edition's Booster", apostrophe dropped in the link
+  M10: 'Magic 2010 Booster', M11: 'Magic 2011 Booster', M12: 'Magic 2012 Booster',
+  M13: 'Magic 2013 Booster', M14: 'Magic 2014 Booster', M15: 'Magic 2015 Booster',
+};
+// Cardmarket turns an apostrophe into a hyphen (Urza's Saga → Urza-s-Saga) and drops other punctuation.
+/* Single packs whose Cardmarket product name can't be derived (Cardmarket isn't consistent about "Draft"). id → name */
+const CM_PACK_NAMES = {
+  's-stx/strixhaven-school-of-mages-draft-booster-pack': 'Strixhaven School of Mages Booster',
+  's-fin/final-fantasy-chocobo-booster-pack': 'Magic The Gathering FINAL FANTASY Holiday Release Chocobo Booster',
+};
+const cmSlug = (name) => name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/['’]/g, '-').replace(/[:.,!&()/]/g, '').trim().replace(/[\s-]+/g, '-').replace(/^-|-$/g, '');
+const cmKey = (t) => String(t).toLowerCase().replace(/['’:.,!&()/]/g, '').replace(/[\s-]+/g, ' ').trim();
 /** Best guess of a catalog pack's Cardmarket page (not verified; the sheet says so and offers Search). */
 function cardmarketGuess(p, s) {
   if (!p || !s || p.custom) return null;
-  const pre = CM_SET_NAMES[String(s.code || '').toUpperCase()];
-  let name = pre ? `${pre} ${shortName(p.name, s.name)}` : p.name.replace(/\s+pack$/i, '');
+  if (CM_PACK_NAMES[p.id]) return `https://www.cardmarket.com/en/Magic/Products/Boosters/${cmSlug(CM_PACK_NAMES[p.id])}`;
+  const code = String(s.code || '').toUpperCase();
+  if (CM_PRODUCT_NAMES[code]) return `https://www.cardmarket.com/en/Magic/Products/Boosters/${cmSlug(CM_PRODUCT_NAMES[code])}`;
+  const pre = CM_SET_NAMES[code];
+  const plain = p.name.replace(/\s+pack\b/i, '');
+  // Product names in the catalog often lost the set's apostrophes ("Urzas Saga Booster"); when the pack name
+  // starts with the set name, rebuild it from the set name so the punctuation matches Cardmarket's.
+  const fromSet = !pre && cmKey(plain).startsWith(cmKey(s.name) + ' ') ? `${s.name}${plain.slice(plain.length - (cmKey(plain).length - cmKey(s.name).length))}` : null;
+  let name = pre ? `${pre} ${shortName(p.name, s.name)}` : fromSet && cmKey(fromSet) === cmKey(plain) ? fromSet : plain;
+  // Sets whose name already contains "Booster" (Mystery Booster…) are listed under the set name alone, e.g. Mystery-Booster
+  if (/\bbooster\b/i.test(s.name) && cmKey(name).startsWith(cmKey(s.name) + ' booster')) {
+    // …except a non-retail edition, which has its own page: Mystery-Booster-Convention-Edition-Booster
+    const ed = name.match(/\((?!retail)([^)]*edition)\)/i);
+    name = ed ? `${s.name} ${ed[1]} Booster` : s.name;
+  }
+  name = name.replace(/\bFaction Booster$/i, 'Faction Pack'); // Mirrodin Besieged faction packs are "… Faction Pack" on Cardmarket
   if (/^secret lair\b/i.test(name)) name = `Secret Lair Drop Series ${name}`; // Cardmarket files Secret Lair drops under this series name
   return `https://www.cardmarket.com/en/Magic/Products/Boosters/${cmSlug(name)}`;
 }
@@ -1384,6 +1416,15 @@ function putEntry(data, id, e) { const c = compactEntry(e); if (c) data.entries[
 const sameEntry = (a, b) => JSON.stringify(compactEntry(a)) === JSON.stringify(compactEntry(b));
 
 function defaultSettings() { return { currency: 'EUR', symbol: '€', locale: 'auto', csvFormat: 'auto' }; }
+/* Catalog packs renamed after release. Pack ids never change, so prices, dates and ownership stay attached.
+   The old name still matches on CSV import. id → [old name, new name] */
+const PACK_RENAMES = {
+  's-eld/throne-of-eldraine-draft-booster-pack': ['Throne of Eldraine Draft Booster Pack', 'Throne of Eldraine Booster Pack'],
+  's-thb/theros-beyond-death-draft-booster-pack': ['Theros Beyond Death Draft Booster Pack', 'Theros Beyond Death Booster Pack'],
+  's-iko/ikoria-lair-of-behemoths-draft-booster-pack': ['Ikoria Lair of Behemoths Draft Booster Pack', 'Ikoria Lair of Behemoths Booster Pack'],
+  's-m21/core-set-2021-draft-booster-pack': ['Core Set 2021 Draft Booster Pack', 'Core Set 2021 Booster Pack'],
+  's-dbl/innistrad-double-feature-draft-booster-pack': ['Innistrad Double Feature Draft Booster Pack', 'Innistrad Double Feature Booster Pack'],
+};
 function seedData() {
   const sets = [], packs = [], entries = {};
   for (const [name, code, release, ps] of CATALOG) {
@@ -1396,7 +1437,7 @@ function seedData() {
       let pid = id + '/' + slug(pname);
       while (used.has(pid)) pid += '-x';
       used.add(pid);
-      packs.push({ id: pid, setId: id, name: pname, custom: false });
+      packs.push({ id: pid, setId: id, name: PACK_RENAMES[pid] ? PACK_RENAMES[pid][1] : pname, custom: false });
       if (market > 0) entries[pid] = { market };
     }
   }
@@ -1643,7 +1684,9 @@ function sanitizeData(raw) {
     if (!isObj(p) || typeof p.id !== 'string' || !p.id || packIds.has(p.id) || typeof p.name !== 'string' || !p.name.trim()) { badPacks++; continue; }
     if (!setIds.has(p.setId)) { orphan++; continue; }
     packIds.add(p.id);
-    packs.push({ id: p.id, setId: p.setId, name: p.name.trim().slice(0, 300), custom: !!p.custom });
+    let pname = p.name.trim().slice(0, 300);
+    if (!p.custom && PACK_RENAMES[p.id] && pname === PACK_RENAMES[p.id][0]) pname = PACK_RENAMES[p.id][1]; // catalog rename, only if the user kept the old name
+    packs.push({ id: p.id, setId: p.setId, name: pname, custom: !!p.custom });
   }
   if (badPacks) problems.push(`${badPacks} ${plural(badPacks, 'pack')} without a valid name ${badPacks === 1 ? 'was' : 'were'} skipped.`);
   if (orphan) problems.push(`${orphan} ${plural(orphan, 'pack')} pointed to a set that isn’t there and ${orphan === 1 ? 'was' : 'were'} skipped.`);
@@ -1772,6 +1815,7 @@ function planCsvImport(data, text) {
   sets.forEach(idxSet);
   const packKey = (setId, name) => setId + '|' + norm(name);
   const packByKey = new Map(packs.map((p) => [packKey(p.setId, p.name), p]));
+  for (const p of packs) { const r = PACK_RENAMES[p.id]; if (r && !packByKey.has(packKey(p.setId, r[0]))) packByKey.set(packKey(p.setId, r[0]), p); } // old names still match
   const working = new Map(); // packId → entry being built
   const seen = new Map();
   const get = (r, k) => (k in map ? String(r[map[k]] == null ? '' : r[map[k]]).trim() : undefined);
