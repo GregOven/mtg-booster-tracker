@@ -835,13 +835,15 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 
 /* Mobile: compact header so the first packs are visible without scrolling (summary details on demand) */
 @media (max-width: 719px) {
-  body:not([data-tab="collection"]) #stats, body:not([data-tab="collection"]) #progress, body:not(.stats-open) #progress { display: none !important; }
+  body:not([data-tab="collection"]) #stats, body:not([data-tab="collection"]) #progress { display: none !important; }
   .m-only { display: inline; }
   .lbl-short { display: inline; } .lbl-long, .sub-long { display: none; }
   .stats { margin: var(--sp-3) 0 var(--sp-2); }
   .stat { min-height: 0; padding: var(--sp-2) var(--sp-3); }
   .stat-value { font-size: var(--fs-4); margin-top: 2px; }
   .stats:not(.is-open) .stat-note { display: none; }
+  .stats:not(.is-open) .stat:nth-child(2), .stats:not(.is-open) .stat:nth-child(4) { display: none; } /* Spent, Gain / loss */
+  body.stats-open .pl-extra { display: inline; } /* complete sets count with the details */
   .stats-toggle { display: flex; grid-column: 1 / -1; align-items: center; justify-content: center; gap: 6px; min-height: 40px; background: var(--surface); color: var(--accent); font-size: var(--fs-2); font-weight: var(--w-medium); }
   .stats-toggle .i { transition: transform var(--dur-2) var(--ease); }
   .stats.is-open .stats-toggle .i { transform: rotate(180deg); }
@@ -2058,7 +2060,7 @@ function renderStats() {
   el.classList.toggle('is-open', open);
   document.body.classList.toggle('stats-open', open);
   const ci = completionInfo(store.data, idx());
-  const ownedSub = ci.total ? `<span class="m-only">${ci.pct} % complete <span class="meter" aria-hidden="true"><i class="comp-fill${ci.owned === ci.total ? ' is-full' : ''}" style="width:${ci.pctExact.toFixed(1)}%;--p:${ci.pctExact.toFixed(1)}%"></i></span></span>` : '';
+  const ownedSub = ''; void ci; // completion is shown by the progress bar below the tiles
   el.innerHTML = stat({ label: 'Owned', value: fmtInt(own), note: ownedNote, sub: ownedSub }) + spent + value + gain +
     `<button class="stats-toggle" type="button" data-action="toggle-stats" aria-expanded="${open}">${open ? 'Hide details' : 'Show details'}${icon('chev', 'i-sm')}</button>`;
   if (!renderStats.counts) renderStats.counts = $$('.tabs [data-count="tobuy"], .tabbar [data-count="tobuy"]');
