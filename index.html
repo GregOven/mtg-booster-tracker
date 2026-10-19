@@ -835,7 +835,9 @@ input[type="date"].input::-webkit-date-and-time-value { text-align: left; }
 
 /* Mobile: compact header so the first packs are visible without scrolling (summary details on demand) */
 @media (max-width: 719px) {
-  body:not([data-tab="collection"]) #stats, body:not([data-tab="collection"]) #progress { display: none !important; }
+  body:not([data-tab="collection"]) #stats, #progress { display: none !important; } /* completion bar is inside the Owned tile on phones */
+  .owned-prog { display: block; }
+  .stat-sub .owned-meter { display: block; width: 100%; height: 5px; margin: 6px 0 2px; }
   .m-only { display: inline; }
   .lbl-short { display: inline; } .lbl-long, .sub-long { display: none; }
   .stats { margin: var(--sp-3) 0 var(--sp-2); }
@@ -2060,8 +2062,9 @@ function renderStats() {
   el.classList.toggle('is-open', open);
   document.body.classList.toggle('stats-open', open);
   const ci = completionInfo(store.data, idx());
-  const ownedSub = ''; void ci; // completion is shown by the progress bar below the tiles
-  el.innerHTML = stat({ label: 'Owned', value: fmtInt(own), note: ownedNote, sub: ownedSub }) + spent + value + gain +
+  // mobile: completion lives in the Owned tile (the big progress card is hidden there)
+  const ownedSub = ci.total ? `<span class="m-only owned-prog">${ci.pct} % complete<span class="meter owned-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${ci.pct}" aria-label="Collection ${ci.pct} % complete"><i class="comp-fill${ci.owned === ci.total ? ' is-full' : ''}" style="width:${ci.pctExact.toFixed(1)}%;--p:${ci.pctExact.toFixed(1)}%"></i></span></span>` : '';
+  el.innerHTML = stat({ label: 'Owned', value: fmtInt(own), note: ownedNote + (ci.completeSets ? `<span class="m-only"> · ${fmtInt(ci.completeSets)} complete ${plural(ci.completeSets, 'set')}</span>` : ''), sub: ownedSub }) + spent + value + gain +
     `<button class="stats-toggle" type="button" data-action="toggle-stats" aria-expanded="${open}">${open ? 'Hide details' : 'Show details'}${icon('chev', 'i-sm')}</button>`;
   if (!renderStats.counts) renderStats.counts = $$('.tabs [data-count="tobuy"], .tabbar [data-count="tobuy"]');
   renderStats.counts.forEach((x) => { x.textContent = s.toBuy.count ? fmtInt(s.toBuy.count) : ''; });
