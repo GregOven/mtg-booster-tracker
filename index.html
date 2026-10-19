@@ -79,6 +79,7 @@
   --neg: var(--mana-r);
   --neg-soft: rgba(238, 90, 95, .11);
   --neg-line: rgba(238, 90, 95, .34);
+  --scale-mid: #f08c2e; /* completion scale midpoint (50 %): orange, kept apart from milestone gold */
   --wish: var(--mana-w);
   --gold: #d9b45a;
   --gold-soft: rgba(217, 180, 90, .13);
@@ -118,6 +119,7 @@
     --pos-line: rgba(0, 115, 62, .38);
     --neg-soft: rgba(211, 32, 42, .07);
     --neg-line: rgba(211, 32, 42, .3);
+    --scale-mid: #d96a00;
     --wish-stroke: #a8913a;
     --gold: #7d5e0e;  /* ≥4.5:1 for the gold milestone label on its tint */
     --gold-soft: rgba(154, 116, 23, .10);
@@ -371,7 +373,8 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .meter { position: relative; width: 56px; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; flex: none; }
 .meter > i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; }
 /* Completion scale: 0 % = Red mana, 100 % = Green mana. --p is set inline (0–100%). */
-.comp-fill { background: var(--neg); background: color-mix(in oklch, var(--pos) var(--p, 0%), var(--neg)); }
+/* Completion scale: 0 % Red → 50 % orange → 100 % Green. A straight Red→Green mix turns dull brown/olive in the middle. */
+.comp-fill { background: var(--neg); background: color-mix(in oklch, var(--pos) clamp(0%, calc((var(--p, 0%) - 50%) * 2), 100%), color-mix(in oklch, var(--scale-mid) clamp(0%, calc(var(--p, 0%) * 2), 100%), var(--neg))); }
 .meter.is-full > i, .comp-fill.is-full { background: var(--pos); }
 
 /* Collection progress */
@@ -548,7 +551,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .bar-row[open] .bar-track { background: var(--surface-3); }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; min-width: 2px; }
 .comp-row .bar-fill { min-width: 0; }
-.bar-fill.comp-fill { background: var(--neg); background: color-mix(in oklch, var(--pos) var(--p, 0%), var(--neg)); }
+.bar-fill.comp-fill { background: var(--neg); background: color-mix(in oklch, var(--pos) clamp(0%, calc((var(--p, 0%) - 50%) * 2), 100%), color-mix(in oklch, var(--scale-mid) clamp(0%, calc(var(--p, 0%) * 2), 100%), var(--neg))); }
 .bar-fill.comp-fill.is-full { background: var(--pos); }
 .bar-val { font-size: var(--fs-2); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .bar-val small { color: var(--text-3); font-size: var(--fs-1); margin-left: 6px; }
