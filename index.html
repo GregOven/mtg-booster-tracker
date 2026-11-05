@@ -572,21 +572,71 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .rank-sub { font-size: var(--fs-1); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-val { text-align: right; font-variant-numeric: tabular-nums; font-size: var(--fs-3); white-space: nowrap; }
 /* Collector Boosters card */
-.cb-progress { display: flex; align-items: center; gap: var(--sp-3); padding: 0 20px var(--sp-3); font-size: var(--fs-2); color: var(--text-2); }
-.cb-meter { flex: 1; width: auto; height: 6px; }
+.cb-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.cb-kpi { background: var(--surface); padding: var(--sp-3) 20px; min-width: 0; }
+.cb-kpi-label { font-size: var(--fs-1); color: var(--text-2); text-transform: uppercase; letter-spacing: .06em; }
+.cb-kpi-value { font-size: var(--fs-6); font-weight: var(--w-semi); letter-spacing: -.02em; line-height: 1.15; margin-top: 4px; white-space: nowrap; }
+.cb-kpi.is-owned .cb-kpi-value { color: var(--pos); }
+.cb-of { font-size: var(--fs-4); color: var(--text-3); font-weight: var(--w-regular); }
+.cb-kpi-note { display: flex; align-items: center; flex-wrap: wrap; gap: 4px var(--sp-2); font-size: var(--fs-1); color: var(--text-2); margin-top: 4px; }
+.cb-meter { flex: 1 1 60px; width: auto; height: 5px; }
+.cb-kpi-link { min-height: 0; padding: 0; font-size: var(--fs-1); }
+.cb-album { padding: var(--sp-2) 20px var(--sp-2); display: grid; gap: var(--sp-3); }
+.cb-year { display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: var(--sp-3); align-items: start; }
+.cb-year-head { display: grid; gap: 2px; padding-top: 6px; }
+.cb-year-y { font-family: var(--font-serif); font-size: var(--fs-4); font-weight: var(--w-semi); line-height: 1; }
+.cb-year-n { font-size: var(--fs-1); color: var(--text-3); font-variant-numeric: tabular-nums; }
+.cb-year-n.is-full { color: var(--pos); }
+.cb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: var(--sp-2); }
+.cb-tile { position: relative; min-width: 0; }
+.cb-tile-main { display: grid; align-content: start; gap: 2px; width: 100%; height: 100%; min-height: 84px; padding: 8px 10px; border-radius: var(--r-2); text-align: left;
+  background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); color: var(--text-2); transition: background-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease); }
+.cb-tile:not(.is-owned) .cb-tile-main { background-image: repeating-linear-gradient(135deg, transparent 0 7px, var(--hover) 7px 8px); }
+.cb-tile-main:hover { background-color: var(--hover); }
+.cb-tile.is-owned .cb-tile-main { background: color-mix(in srgb, var(--pos) 16%, var(--surface)); box-shadow: inset 0 0 0 1px var(--pos-line); color: var(--text); }
+.cb-tile.is-wish:not(.is-owned) .cb-tile-main { box-shadow: inset 0 0 0 1.5px var(--wish-stroke); }
+.cb-code { font: var(--w-semi) var(--fs-1)/1.2 var(--font-sans); letter-spacing: .08em; color: var(--text-3); padding-right: 26px; }
+.cb-tile.is-owned .cb-code { color: var(--pos); }
+.cb-tname { font-size: var(--fs-2); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cb-tag { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--gold); }
+.cb-tval { display: inline-flex; align-items: center; gap: 3px; margin-top: auto; padding-top: 4px; font-size: var(--fs-1); font-variant-numeric: tabular-nums; color: var(--text-2); }
+.cb-tile.is-owned .cb-tval { color: var(--pos); font-weight: var(--w-medium); }
+.cb-tstar.star { position: absolute; top: 2px; right: 2px; width: 32px; height: 32px; }
+.cb-tstar.star .i { width: 16px; height: 16px; }
+.cb-legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-1) var(--sp-4); padding: var(--sp-2) 20px var(--sp-4); font-size: var(--fs-1); color: var(--text-2); }
+.cb-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.cb-key { width: 14px; height: 10px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--line-2); }
+.cb-key.is-owned { background: color-mix(in srgb, var(--pos) 30%, var(--surface)); box-shadow: inset 0 0 0 1px var(--pos-line); }
+.cb-key-star { fill: var(--wish); stroke: var(--wish-stroke); }
+.cb-legend-hint { margin-left: auto; color: var(--text-3); }
+.cb-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2); padding: var(--sp-3) 20px var(--sp-2); }
+.cb-sort select { height: 38px; font-size: var(--fs-2); padding: 0 34px 0 var(--sp-3); }
 .cb-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--sp-4); padding: 0 var(--sp-3) var(--sp-3); }
 .cb-row { display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) auto; align-items: center; gap: 0 var(--sp-1); border-top: 1px solid var(--line); min-height: 56px; }
+.cb-check { display: grid; place-items: center; width: var(--tap); height: var(--tap); color: var(--pos); }
 .cb-main { display: grid; text-align: left; min-width: 0; padding: var(--sp-2) 0; }
 .cb-name { font-size: var(--fs-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cb-sub { font-size: var(--fs-1); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cb-wish { color: var(--wish-stroke); }
 .cb-end { display: grid; justify-items: end; gap: 2px; padding-right: var(--sp-2); font-variant-numeric: tabular-nums; }
 .cb-val { font-size: var(--fs-2); }
-.cb-own { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-1); font-weight: var(--w-medium); color: var(--pos); }
-.cb-row.is-owned .cb-name { color: var(--text); }
-.cb-row:not(.is-owned) .cb-name { color: var(--text-2); }
+.cb-own { font-size: var(--fs-1); font-weight: var(--w-medium); color: var(--pos); }
 .seg-n { color: var(--text-3); font-variant-numeric: tabular-nums; margin-left: 2px; }
-@media (max-width: 719px) { .cb-list { grid-template-columns: 1fr; } .cb-card .card-head { flex-wrap: wrap; gap: var(--sp-2); } }
+@media (max-width: 719px) {
+  .cb-card .card-head { flex-wrap: wrap; gap: var(--sp-2); }
+  .cb-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cb-kpi { padding: var(--sp-2) var(--sp-3); }
+  .cb-kpi-value { font-size: var(--fs-5); }
+  .cb-album { padding: var(--sp-2) var(--sp-3); }
+  .cb-year { grid-template-columns: 1fr; gap: 6px; }
+  .cb-year-head { display: flex; align-items: baseline; gap: var(--sp-2); padding-top: 0; }
+  .cb-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .cb-tile-main { min-height: 78px; padding: 7px 8px; }
+  .cb-legend { padding: var(--sp-2) var(--sp-3) var(--sp-3); }
+  .cb-legend-hint { margin-left: 0; width: 100%; }
+  .cb-tools { padding: var(--sp-3) var(--sp-3) var(--sp-2); }
+  .cb-list { grid-template-columns: 1fr; }
+}
 .mover-val { display: inline-flex; align-items: center; gap: 3px; font-weight: var(--w-medium); }
 .mover-val .i { width: 14px; height: 14px; }
 @media (max-width: 520px) { .mv-detail { display: none; } }
@@ -1944,7 +1994,7 @@ function buildCsv(data, fmt) {
 const store = {
   data: null,
   rev: 0,
-  view: { tab: 'collection', q: '', filter: 'all', sort: 'newest', pinned: new Set(), tmpClosed: {}, flatLimit: FLAT_PAGE, insightMode: 'spent', statsOpen: false, cbMode: 'missing' },
+  view: { tab: 'collection', q: '', filter: 'all', sort: 'newest', pinned: new Set(), tmpClosed: {}, flatLimit: FLAT_PAGE, insightMode: 'spent', statsOpen: false, cbMode: 'missing', cbView: 'album', cbSort: 'newest' },
   saveError: null, lastSavedAt: null, corrupt: null, storageBlocked: false,
   bootProblems: [], persist: { supported: false, persisted: false, asked: false },
 };
@@ -2552,35 +2602,78 @@ function renderInsights() {
   const moversCard = (title, sub, list, emptyText) => `<div class="card card-flush"><div class="card-head"><div><h2 class="card-title">${title}</h2><div class="card-sub">${sub}</div></div></div>${list.length ? `<div style="padding:8px 8px 12px"><div class="rank">${list.map(moverRow).join('')}</div></div>` : `<div class="empty empty-sm"><p>${emptyText}</p></div>`}</div>`;
   const moversBase = priced.length ? `Out of ${fmtInt(priced.length)} owned ${plural(priced.length, 'pack')} with both a price paid and a market value${evenCount ? ` · ${fmtInt(evenCount)} exactly even` : ''}.` : '';
   const noPricedText = owned.length ? 'Needs owned packs with both a price paid and a market value.' : 'Tick the packs you own and add prices to see this.';
-  // Collector Boosters: which ones are owned and which are missing, with a To buy star on each
+  // Collector Boosters: an album of every Collector Booster (owned filled, missing outlined) plus a sortable list
   const isCollector = (p) => /collector booster/i.test(p.name);
   const cbAll = d.packs.filter(isCollector).map((p) => ({ p, s: I.setsById.get(p.setId), e: entryOf(d, p.id) }))
-    .sort((a, b) => (b.s.release.localeCompare(a.s.release)) || (I.pnum.get(b.p.id) - I.pnum.get(a.p.id)));
+    .sort((a, b) => (b.s.release.localeCompare(a.s.release)) || (I.pnum.get(a.p.id) - I.pnum.get(b.p.id)));
   const cbOwned = cbAll.filter((x) => x.e.qty > 0), cbMissing = cbAll.filter((x) => !(x.e.qty > 0));
-  const cbWish = cbMissing.filter((x) => x.e.toBuy).length;
+  const cbWish = cbMissing.filter((x) => x.e.toBuy);
+  const cbView = store.view.cbView === 'list' ? 'list' : 'album';
   const cbMode = ['missing', 'owned', 'all'].includes(store.view.cbMode) ? store.view.cbMode : 'missing';
-  const cbList = cbMode === 'owned' ? cbOwned : cbMode === 'all' ? cbAll : cbMissing;
+  const cbSort = ['newest', 'cheap', 'dear'].includes(store.view.cbSort) ? store.view.cbSort : 'newest';
   const cbPct = cbAll.length ? (cbOwned.length / cbAll.length) * 100 : 0;
-  const cbMissVal = cbMissing.filter((x) => x.e.market != null), cbOwnVal = cbOwned.filter((x) => x.e.market != null);
-  const sumC = (xs) => xs.reduce((t, x) => t + cents(x.e.market) * Math.max(1, x.e.qty), 0);
-  const cbLabel = (x) => { const t = shortName(x.p.name, x.s.name); return /^collector booster$/i.test(t) ? '' : t; };
+  const cbMissVal = cbMissing.filter((x) => x.e.market != null);
+  const cbCost = cbMissVal.reduce((t, x) => t + cents(x.e.market), 0);
+  const cbWishVal = cbWish.filter((x) => x.e.market != null).reduce((t, x) => t + cents(x.e.market), 0);
+  // extra product label when a set has more than a plain Collector Booster (e.g. "Special Edition")
+  const cbExtra = (x) => { const t = shortName(x.p.name, x.s.name).replace(/\s*collector booster\s*/i, ' ').trim(); return t; };
+  const cbStar = (x, cls) => `<button class="star ${cls}" type="button" data-action="toggle-star" aria-pressed="${!!x.e.toBuy}" aria-label="${x.e.toBuy ? 'Remove from' : 'Add to'} To buy: ${esc(x.p.name)}" title="${x.e.toBuy ? 'On your To buy list' : 'Add to To buy'}">${icon('star')}</button>`;
+  const cbTip = (x) => `${x.p.name} · ${x.s.release.slice(0, 4)} · ${x.e.qty > 0 ? `owned${x.e.qty > 1 ? ` ×${x.e.qty}` : ''}` : 'missing'}${x.e.market != null ? ` · ${money(x.e.market)}` : ''}${x.e.toBuy ? ' · on To buy' : ''}`;
+
+  // album: tiles grouped by release year
+  const cbYears = [];
+  for (const x of cbAll) { const y = x.s.release.slice(0, 4); let g = cbYears[cbYears.length - 1]; if (!g || g.y !== y) cbYears.push(g = { y, items: [] }); g.items.push(x); }
+  const cbTile = (x) => {
+    const own = x.e.qty > 0, extra = cbExtra(x);
+    return `<div class="cb-tile${own ? ' is-owned' : ''}${x.e.toBuy ? ' is-wish' : ''}" data-pack="${esc(x.p.id)}" role="listitem">
+      <button class="cb-tile-main" type="button" data-action="open-pack" title="${esc(cbTip(x))}" aria-label="${esc(cbTip(x))}">
+        <span class="cb-code">${esc(x.s.code || '—')}</span>
+        <span class="cb-tname">${esc(x.s.name)}</span>
+        ${extra ? `<span class="cb-tag">${esc(extra)}</span>` : ''}
+        <span class="cb-tval">${own ? `${icon('check', 'i-sm')}${x.e.qty > 1 ? `×${x.e.qty}` : 'Owned'}` : x.e.market != null ? esc(moneyC(cents(x.e.market))) : '—'}</span>
+      </button>
+      ${own && !x.e.toBuy ? '' : cbStar(x, 'cb-tstar')}
+    </div>`;
+  };
+  const cbAlbum = `<div class="cb-album">${cbYears.map((g) => {
+    const o = g.items.filter((x) => x.e.qty > 0).length;
+    return `<section class="cb-year" aria-label="${g.y}: ${o} of ${g.items.length} owned"><div class="cb-year-head"><span class="cb-year-y">${g.y}</span><span class="cb-year-n${o === g.items.length ? ' is-full' : ''}">${o}/${g.items.length}</span></div><div class="cb-tiles" role="list">${g.items.map(cbTile).join('')}</div></section>`;
+  }).join('')}</div>
+  <div class="cb-legend" aria-hidden="true"><span><i class="cb-key is-owned"></i>Owned</span><span><i class="cb-key"></i>Missing</span><span><svg class="i i-sm cb-key-star"><use href="#i-star"/></svg>On To buy</span><span class="cb-legend-hint">Tap a pack for details</span></div>`;
+
+  // list: filter + sort
+  const cbBase = cbMode === 'owned' ? cbOwned : cbMode === 'all' ? cbAll : cbMissing;
+  const priceOf = (x) => (x.e.market != null ? x.e.market : null);
+  const cbList = cbSort === 'newest' ? cbBase : cbBase.slice().sort((a, b) => {
+    const pa = priceOf(a), pb = priceOf(b);
+    if (pa == null && pb == null) return 0; if (pa == null) return 1; if (pb == null) return -1; // no value last
+    return cbSort === 'cheap' ? pa - pb : pb - pa;
+  });
   const cbRow = (x) => {
-    const own = x.e.qty > 0, extra = cbLabel(x);
+    const own = x.e.qty > 0, extra = cbExtra(x);
     return `<div class="cb-row${own ? ' is-owned' : ''}" data-pack="${esc(x.p.id)}">
-      <button class="star" type="button" data-action="toggle-star" aria-pressed="${!!x.e.toBuy}" aria-label="${x.e.toBuy ? 'Remove from' : 'Add to'} To buy: ${esc(x.p.name)}">${icon('star')}</button>
-      <button class="cb-main" type="button" data-action="open-pack"><span class="cb-name">${esc(x.s.name)}</span><span class="cb-sub">${extra ? `${esc(extra)} · ` : ''}${x.s.release.slice(0, 4)}${x.e.toBuy ? ' · <span class="cb-wish">on To buy</span>' : ''}</span></button>
-      <span class="cb-end">${own ? `<span class="cb-own">${icon('check', 'i-sm')}Owned${x.e.qty > 1 ? ` ×${x.e.qty}` : ''}</span>` : ''}<span class="cb-val">${x.e.market != null ? moneyC(cents(x.e.market)) : '<span class="faint">no value</span>'}</span></span>
+      ${own && !x.e.toBuy ? `<span class="cb-check" title="Owned">${icon('check')}</span>` : cbStar(x, '')}
+      <button class="cb-main" type="button" data-action="open-pack"><span class="cb-name">${esc(x.s.name)}</span><span class="cb-sub">${extra ? `${esc(extra)} · ` : ''}${esc(x.s.code || '')}${x.s.code ? ' · ' : ''}${x.s.release.slice(0, 4)}${x.e.toBuy ? ' · <span class="cb-wish">on To buy</span>' : ''}</span></button>
+      <span class="cb-end">${own ? `<span class="cb-own">Owned${x.e.qty > 1 ? ` ×${x.e.qty}` : ''}</span>` : ''}<span class="cb-val">${x.e.market != null ? moneyC(cents(x.e.market)) : '<span class="faint">no value</span>'}</span></span>
     </div>`;
   };
   const cbSeg = (mode, label, n) => `<button type="button" data-action="cb-mode" data-mode="${mode}" aria-pressed="${cbMode === mode}">${label} <span class="seg-n">${fmtInt(n)}</span></button>`;
-  const cbFoot = cbMode === 'owned'
-    ? (cbOwned.length ? `Market value of the ${fmtInt(cbOwnVal.length)} owned ${plural(cbOwnVal.length, 'one')} with a value: <b>${moneyC(sumC(cbOwnVal))}</b>.` : '')
-    : (cbMissing.length ? `Buying all ${fmtInt(cbMissing.length)} missing would cost about <b>${moneyC(sumC(cbMissVal))}</b> at market value${cbMissVal.length < cbMissing.length ? ` (${fmtInt(cbMissing.length - cbMissVal.length)} without a value not included)` : ''}.` : '');
-  const cbHTML = cbAll.length ? `<div class="card span-2 card-flush cb-card"><div class="card-head"><div><h2 class="card-title">Collector Boosters</h2><div class="card-sub">${fmtInt(cbOwned.length)} of ${fmtInt(cbAll.length)} owned${cbWish ? ` · ${fmtInt(cbWish)} missing on your To buy list` : ''} · tap ☆ to add one to To buy</div></div>
-      <div class="seg" role="group" aria-label="Show">${cbSeg('missing', 'Missing', cbMissing.length)}${cbSeg('owned', 'Owned', cbOwned.length)}${cbSeg('all', 'All', cbAll.length)}</div></div>
-    <div class="cb-progress"><span class="meter cb-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(cbPct)}" aria-label="Collector Boosters ${Math.round(cbPct)} % owned"><i class="comp-fill${cbOwned.length === cbAll.length ? ' is-full' : ''}" style="width:${cbPct.toFixed(1)}%;--p:${cbPct.toFixed(1)}%"></i></span><span class="num">${Math.round(cbPct)} %</span></div>
-    ${cbList.length ? `<div class="cb-list">${cbList.map(cbRow).join('')}</div>` : `<div class="empty empty-sm"><p>${cbMode === 'owned' ? 'You don’t own a Collector Booster yet.' : 'You own every Collector Booster in the catalog.'}</p></div>`}
-    ${cbFoot ? `<div class="card-foot" style="padding:0 20px 16px;margin:0">${cbFoot}</div>` : ''}</div>` : '';
+  const cbListHTML = `<div class="cb-tools"><div class="seg" role="group" aria-label="Show">${cbSeg('missing', 'Missing', cbMissing.length)}${cbSeg('owned', 'Owned', cbOwned.length)}${cbSeg('all', 'All', cbAll.length)}</div>
+      <label class="select cb-sort"><span class="sr">Sort</span><select data-action-change="cb-sort" aria-label="Sort Collector Boosters"><option value="newest"${cbSort === 'newest' ? ' selected' : ''}>Newest first</option><option value="cheap"${cbSort === 'cheap' ? ' selected' : ''}>Cheapest first</option><option value="dear"${cbSort === 'dear' ? ' selected' : ''}>Most expensive first</option></select>${icon('chev')}</label></div>
+    ${cbList.length ? `<div class="cb-list">${cbList.map(cbRow).join('')}</div>` : `<div class="empty empty-sm"><p>${cbMode === 'owned' ? 'You don’t own a Collector Booster yet.' : 'You own every Collector Booster in the catalog.'}</p></div>`}`;
+
+  const cbKpi = (label, value, note, cls = '') => `<div class="cb-kpi ${cls}"><div class="cb-kpi-label">${label}</div><div class="cb-kpi-value num">${value}</div>${note ? `<div class="cb-kpi-note">${note}</div>` : ''}</div>`;
+  const cbHTML = cbAll.length ? `<div class="card span-2 card-flush cb-card">
+    <div class="card-head"><div><h2 class="card-title">Collector Boosters</h2><div class="card-sub">Every Collector Booster in your catalog</div></div>
+      <div class="seg" role="group" aria-label="View"><button type="button" data-action="cb-view" data-view="album" aria-pressed="${cbView === 'album'}">Album</button><button type="button" data-action="cb-view" data-view="list" aria-pressed="${cbView === 'list'}">List</button></div></div>
+    <div class="cb-kpis">
+      ${cbKpi('Owned', `${fmtInt(cbOwned.length)}<span class="cb-of">/${fmtInt(cbAll.length)}</span>`, `<span class="meter cb-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(cbPct)}" aria-label="${Math.round(cbPct)} % of Collector Boosters owned"><i class="comp-fill${cbOwned.length === cbAll.length ? ' is-full' : ''}" style="width:${cbPct.toFixed(1)}%;--p:${cbPct.toFixed(1)}%"></i></span><span>${Math.round(cbPct)} %</span>`, 'is-owned')}
+      ${cbKpi('Missing', fmtInt(cbMissing.length), cbMissing.length ? 'to complete the set' : 'none — all collected')}
+      ${cbKpi('To complete', cbMissVal.length ? `≈ ${esc(moneyC(cbCost))}` : '—', cbMissing.length ? (cbMissVal.length < cbMissing.length ? `${fmtInt(cbMissing.length - cbMissVal.length)} without a value not included` : 'at market value') : '')}
+      ${cbKpi('On To buy', fmtInt(cbWish.length), cbWish.length ? (cbWishVal ? `≈ ${esc(moneyC(cbWishVal))}` : '') + ` <button class="link-btn cb-kpi-link" type="button" data-action="tab" data-tab="tobuy">Open list${icon('chev-r', 'i-sm')}</button>` : 'tap ☆ on a missing pack', 'is-wish')}
+    </div>
+    ${cbView === 'album' ? cbAlbum : cbListHTML}
+  </div>` : '';
   const moversHTML = moversCard('Biggest gains', 'Market value above what you paid, top 5', gainers, priced.length ? 'None of your packs is worth more than you paid yet.' : noPricedText)
     + moversCard('Biggest losses', 'Market value below what you paid, top 5', losers, priced.length ? 'None of your packs is worth less than you paid.' : noPricedText)
     + (moversBase ? `<div class="card-note span-2">${esc(moversBase)}</div>` : '');
@@ -3442,6 +3535,7 @@ function onClick(ev) {
     case 'toggle-stats': store.view.statsOpen = !store.view.statsOpen; renderStats(); $('[data-action="toggle-stats"]').focus(); break;
     case 'insight-mode': store.view.insightMode = t.dataset.mode; render(); break;
     case 'cb-mode': store.view.cbMode = t.dataset.mode; render(); break;
+    case 'cb-view': store.view.cbView = t.dataset.view; render(); break;
     case 'goto-year': {
       const y = t.dataset.goto;
       store.view.q = ''; store.view.filter = 'all';
@@ -3471,6 +3565,7 @@ async function startFresh() {
 
 function onChange(ev) {
   const t = ev.target;
+  if (t.matches('[data-action-change="cb-sort"]')) { store.view.cbSort = t.value; render(); const n = $('.cb-sort select'); if (n) n.focus(); return; }
   if (t.matches('[data-action="toggle-owned"]')) {
     const row = t.closest('[data-pack]'); const id = row.dataset.pack;
     const e = entryOf(store.data, id), p = store.data.packs.find((x) => x.id === id);
