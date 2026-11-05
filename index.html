@@ -571,6 +571,22 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .rank-name { font-size: var(--fs-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-sub { font-size: var(--fs-1); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-val { text-align: right; font-variant-numeric: tabular-nums; font-size: var(--fs-3); white-space: nowrap; }
+/* Collector Boosters card */
+.cb-progress { display: flex; align-items: center; gap: var(--sp-3); padding: 0 20px var(--sp-3); font-size: var(--fs-2); color: var(--text-2); }
+.cb-meter { flex: 1; width: auto; height: 6px; }
+.cb-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--sp-4); padding: 0 var(--sp-3) var(--sp-3); }
+.cb-row { display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) auto; align-items: center; gap: 0 var(--sp-1); border-top: 1px solid var(--line); min-height: 56px; }
+.cb-main { display: grid; text-align: left; min-width: 0; padding: var(--sp-2) 0; }
+.cb-name { font-size: var(--fs-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-sub { font-size: var(--fs-1); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cb-wish { color: var(--wish-stroke); }
+.cb-end { display: grid; justify-items: end; gap: 2px; padding-right: var(--sp-2); font-variant-numeric: tabular-nums; }
+.cb-val { font-size: var(--fs-2); }
+.cb-own { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-1); font-weight: var(--w-medium); color: var(--pos); }
+.cb-row.is-owned .cb-name { color: var(--text); }
+.cb-row:not(.is-owned) .cb-name { color: var(--text-2); }
+.seg-n { color: var(--text-3); font-variant-numeric: tabular-nums; margin-left: 2px; }
+@media (max-width: 719px) { .cb-list { grid-template-columns: 1fr; } .cb-card .card-head { flex-wrap: wrap; gap: var(--sp-2); } }
 .mover-val { display: inline-flex; align-items: center; gap: 3px; font-weight: var(--w-medium); }
 .mover-val .i { width: 14px; height: 14px; }
 @media (max-width: 520px) { .mv-detail { display: none; } }
@@ -1928,7 +1944,7 @@ function buildCsv(data, fmt) {
 const store = {
   data: null,
   rev: 0,
-  view: { tab: 'collection', q: '', filter: 'all', sort: 'newest', pinned: new Set(), tmpClosed: {}, flatLimit: FLAT_PAGE, insightMode: 'spent', statsOpen: false },
+  view: { tab: 'collection', q: '', filter: 'all', sort: 'newest', pinned: new Set(), tmpClosed: {}, flatLimit: FLAT_PAGE, insightMode: 'spent', statsOpen: false, cbMode: 'missing' },
   saveError: null, lastSavedAt: null, corrupt: null, storageBlocked: false,
   bootProblems: [], persist: { supported: false, persisted: false, asked: false },
 };
@@ -2536,6 +2552,35 @@ function renderInsights() {
   const moversCard = (title, sub, list, emptyText) => `<div class="card card-flush"><div class="card-head"><div><h2 class="card-title">${title}</h2><div class="card-sub">${sub}</div></div></div>${list.length ? `<div style="padding:8px 8px 12px"><div class="rank">${list.map(moverRow).join('')}</div></div>` : `<div class="empty empty-sm"><p>${emptyText}</p></div>`}</div>`;
   const moversBase = priced.length ? `Out of ${fmtInt(priced.length)} owned ${plural(priced.length, 'pack')} with both a price paid and a market value${evenCount ? ` · ${fmtInt(evenCount)} exactly even` : ''}.` : '';
   const noPricedText = owned.length ? 'Needs owned packs with both a price paid and a market value.' : 'Tick the packs you own and add prices to see this.';
+  // Collector Boosters: which ones are owned and which are missing, with a To buy star on each
+  const isCollector = (p) => /collector booster/i.test(p.name);
+  const cbAll = d.packs.filter(isCollector).map((p) => ({ p, s: I.setsById.get(p.setId), e: entryOf(d, p.id) }))
+    .sort((a, b) => (b.s.release.localeCompare(a.s.release)) || (I.pnum.get(b.p.id) - I.pnum.get(a.p.id)));
+  const cbOwned = cbAll.filter((x) => x.e.qty > 0), cbMissing = cbAll.filter((x) => !(x.e.qty > 0));
+  const cbWish = cbMissing.filter((x) => x.e.toBuy).length;
+  const cbMode = ['missing', 'owned', 'all'].includes(store.view.cbMode) ? store.view.cbMode : 'missing';
+  const cbList = cbMode === 'owned' ? cbOwned : cbMode === 'all' ? cbAll : cbMissing;
+  const cbPct = cbAll.length ? (cbOwned.length / cbAll.length) * 100 : 0;
+  const cbMissVal = cbMissing.filter((x) => x.e.market != null), cbOwnVal = cbOwned.filter((x) => x.e.market != null);
+  const sumC = (xs) => xs.reduce((t, x) => t + cents(x.e.market) * Math.max(1, x.e.qty), 0);
+  const cbLabel = (x) => { const t = shortName(x.p.name, x.s.name); return /^collector booster$/i.test(t) ? '' : t; };
+  const cbRow = (x) => {
+    const own = x.e.qty > 0, extra = cbLabel(x);
+    return `<div class="cb-row${own ? ' is-owned' : ''}" data-pack="${esc(x.p.id)}">
+      <button class="star" type="button" data-action="toggle-star" aria-pressed="${!!x.e.toBuy}" aria-label="${x.e.toBuy ? 'Remove from' : 'Add to'} To buy: ${esc(x.p.name)}">${icon('star')}</button>
+      <button class="cb-main" type="button" data-action="open-pack"><span class="cb-name">${esc(x.s.name)}</span><span class="cb-sub">${extra ? `${esc(extra)} · ` : ''}${x.s.release.slice(0, 4)}${x.e.toBuy ? ' · <span class="cb-wish">on To buy</span>' : ''}</span></button>
+      <span class="cb-end">${own ? `<span class="cb-own">${icon('check', 'i-sm')}Owned${x.e.qty > 1 ? ` ×${x.e.qty}` : ''}</span>` : ''}<span class="cb-val">${x.e.market != null ? moneyC(cents(x.e.market)) : '<span class="faint">no value</span>'}</span></span>
+    </div>`;
+  };
+  const cbSeg = (mode, label, n) => `<button type="button" data-action="cb-mode" data-mode="${mode}" aria-pressed="${cbMode === mode}">${label} <span class="seg-n">${fmtInt(n)}</span></button>`;
+  const cbFoot = cbMode === 'owned'
+    ? (cbOwned.length ? `Market value of the ${fmtInt(cbOwnVal.length)} owned ${plural(cbOwnVal.length, 'one')} with a value: <b>${moneyC(sumC(cbOwnVal))}</b>.` : '')
+    : (cbMissing.length ? `Buying all ${fmtInt(cbMissing.length)} missing would cost about <b>${moneyC(sumC(cbMissVal))}</b> at market value${cbMissVal.length < cbMissing.length ? ` (${fmtInt(cbMissing.length - cbMissVal.length)} without a value not included)` : ''}.` : '');
+  const cbHTML = cbAll.length ? `<div class="card span-2 card-flush cb-card"><div class="card-head"><div><h2 class="card-title">Collector Boosters</h2><div class="card-sub">${fmtInt(cbOwned.length)} of ${fmtInt(cbAll.length)} owned${cbWish ? ` · ${fmtInt(cbWish)} missing on your To buy list` : ''} · tap ☆ to add one to To buy</div></div>
+      <div class="seg" role="group" aria-label="Show">${cbSeg('missing', 'Missing', cbMissing.length)}${cbSeg('owned', 'Owned', cbOwned.length)}${cbSeg('all', 'All', cbAll.length)}</div></div>
+    <div class="cb-progress"><span class="meter cb-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(cbPct)}" aria-label="Collector Boosters ${Math.round(cbPct)} % owned"><i class="comp-fill${cbOwned.length === cbAll.length ? ' is-full' : ''}" style="width:${cbPct.toFixed(1)}%;--p:${cbPct.toFixed(1)}%"></i></span><span class="num">${Math.round(cbPct)} %</span></div>
+    ${cbList.length ? `<div class="cb-list">${cbList.map(cbRow).join('')}</div>` : `<div class="empty empty-sm"><p>${cbMode === 'owned' ? 'You don’t own a Collector Booster yet.' : 'You own every Collector Booster in the catalog.'}</p></div>`}
+    ${cbFoot ? `<div class="card-foot" style="padding:0 20px 16px;margin:0">${cbFoot}</div>` : ''}</div>` : '';
   const moversHTML = moversCard('Biggest gains', 'Market value above what you paid, top 5', gainers, priced.length ? 'None of your packs is worth more than you paid yet.' : noPricedText)
     + moversCard('Biggest losses', 'Market value below what you paid, top 5', losers, priced.length ? 'None of your packs is worth less than you paid.' : noPricedText)
     + (moversBase ? `<div class="card-note span-2">${esc(moversBase)}</div>` : '');
@@ -2569,6 +2614,7 @@ function renderInsights() {
       <div class="card"><div class="card-head"><div><h2 class="card-title">Data checks</h2><div class="card-sub">${checks.length ? `${checks.length} ${plural(checks.length, 'thing')} worth a look` : 'Everything looks consistent'}</div></div></div>${checksHTML}</div>
     </div>
     ${moversHTML}
+    ${cbHTML}
     <div class="card span-2"><div class="card-head"><div><h2 class="card-title">Completion by year</h2><div class="card-sub">Packs owned per release year · tap a year to open it</div></div><div class="card-sub num" style="text-align:right">${fmtInt(totalOwned)}/${fmtInt(totalPacks)}<br>${totalPacks ? Math.round((totalOwned / totalPacks) * 100) : 0}%</div></div>${compHTMLAll}</div>
     <div class="card span-2"><div class="card-head"><div><h2 class="card-title">How the numbers work</h2></div></div>
       <p class="help">Totals use only packs that have the needed data, and always say how many that is. <b>Spent</b> adds price paid × copies for owned packs with a price. <b>Value</b> adds market value × copies for owned packs with a value. <b>Gain / loss</b> compares the two only for packs that have both, so a missing price never counts as zero. A market value of 0 is treated as unknown. Currency is a label only: nothing is converted.</p>
@@ -3395,6 +3441,7 @@ function onClick(ev) {
     }
     case 'toggle-stats': store.view.statsOpen = !store.view.statsOpen; renderStats(); $('[data-action="toggle-stats"]').focus(); break;
     case 'insight-mode': store.view.insightMode = t.dataset.mode; render(); break;
+    case 'cb-mode': store.view.cbMode = t.dataset.mode; render(); break;
     case 'goto-year': {
       const y = t.dataset.goto;
       store.view.q = ''; store.view.filter = 'all';
